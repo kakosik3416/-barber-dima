@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/RJMyTwx/MG-9897.jpg">
+    <link rel="shortcut icon" href="https://i.ibb.co/RJMyTwx/MG-9897.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Barber Shop | Онлайн запись</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a0a0a;
+            font-family: 'Roboto Condensed', sans-serif;
+            color: #e0e0e0;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3, .logo, .nav-links a, .btn, .price-item, .booking-title {
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid #c9a03d;
+            padding: 15px 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #c9a03d;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+
+        .logo span {
+            color: #fff;
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #ddd;
+            font-weight: 500;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: #c9a03d;
+        }
+
+        .admin-btn {
+            background: #c9a03d;
+            color: #0a0a0a !important;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .admin-btn:hover {
+            background: #b38f2e;
+            color: #fff !important;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            font-size: 28px;
+            color: #c9a03d;
+            cursor: pointer;
+        }
+
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url('https://images.pexels.com/photos/3998418/pexels-photo-3998418.jpeg?auto=compress&cs=tinysrgb&w=1600') center/cover fixed;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            padding-top: 80px;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.6);
+        }
+
+        .hero h1 i {
+            color: #c9a03d;
+        }
+
+        .hero p {
+            font-size: 22px;
+            margin: 20px 0 30px;
+            font-weight: 300;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #c9a03d;
+            color: #0a0a0a;
+            padding: 14px 38px;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #c9a03d;
+            color: #c9a03d;
+            margin-left: 15px;
+        }
+
+        .btn-outline:hover {
+            background: #c9a03d;
+            color: #0a0a0a;
+        }
+
+        .btn:hover {
+            background: #b38f2e;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(201,160,61,0.3);
+        }
+
+        section {
+            padding: 90px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 42px;
+            margin-bottom: 60px;
+            position: relative;
+            color: #fff;
+        }
+
+        .section-title:after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 3px;
+            background: #c9a03d;
+            margin: 15px auto 0;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 35px;
+        }
+
+        .service-card {
+            background: #111111;
+            padding: 35px 25px;
+            text-align: center;
+            border-radius: 8px;
+            transition: 0.3s;
+            border-bottom: 2px solid #c9a03d;
+        }
+
+        .service-card:hover {
+            transform: translateY(-8px);
+            background: #161616;
+        }
+
+        .service-icon {
+            font-size: 48px;
+            color: #c9a03d;
+            margin-bottom: 20px;
+        }
+
+        .service-card h3 {
+            font-size: 26px;
+            margin-bottom: 10px;
+        }
+
+        .price {
+            font-size: 28px;
+            font-weight: 700;
+            color: #c9a03d;
+            margin: 15px 0;
+        }
+
+        .barbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 40px;
+        }
+
+        .barber-card {
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .barber-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            filter: grayscale(0.3);
+            transition: 0.4s;
+        }
+
+        .barber-card:hover img {
+            filter: grayscale(0);
+            transform: scale(1.02);
+        }
+
+        .barber-card h3 {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+
+        .barber-card p {
+            color: #c9a03d;
+            font-weight: 500;
+            margin: 8px 0 20px;
+        }
+
+        .booking-section {
+            background: linear-gradient(135deg, #0c0c0c 0%, #121212 100%);
+            border-top: 1px solid #2a2a2a;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .booking-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 50px;
+            align-items: start;
+        }
+
+        .booking-info h3 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #c9a03d;
+        }
+
+        .booking-info p {
+            margin-bottom: 25px;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+
+        .info-list {
+            list-style: none;
+            margin-top: 30px;
+        }
+
+        .info-list li {
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .info-list i {
+            color: #c9a03d;
+            width: 32px;
+            font-size: 22px;
+        }
+
+        .booking-form {
+            background: #0f0f0f;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid #2c2c2c;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #c9a03d;
+            outline: none;
+            background: #202020;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #c9a03d;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .submit-btn:hover {
+            background: #e0b354;
+            transform: scale(1.01);
+        }
+
+        .success-message {
+            background: #1f3a2c;
+            border-left: 5px solid #2ecc71;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            color: #b9f6ca;
+            display: none;
+        }
+
+        .contact-section {
+            background: #050505;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .contact-item i {
+            font-size: 36px;
+            color: #c9a03d;
+            margin-bottom: 15px;
+        }
+
+        .contact-item h4 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            background: #000;
+            text-align: center;
+            padding: 30px;
+            font-size: 14px;
+            border-top: 1px solid #222;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #111;
+            border: 1px solid #c9a03d;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #c9a03d;
+        }
+
+        .admin-login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .admin-login-form input {
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 6px;
+        }
+
+        .appointment-admin-item {
+            background: #1c1c1c;
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #c9a03d;
+        }
+
+        .delete-admin-btn, .reschedule-admin-btn {
+            background: #3a1f1f;
+            border: none;
+            color: #ff9e8f;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-top: 8px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 13px;
+        }
+
+        .reschedule-admin-btn {
+            background: #2c5a2c;
+            color: #fff;
+        }
+
+        .export-btn {
+            background: #2c5a2c;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .booking-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 {
+                font-size: 44px;
+            }
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                background: #0a0a0a;
+                padding: 20px;
+                margin-top: 15px;
+                border-radius: 12px;
+            }
+            .nav-links.active {
+                display: flex;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .btn-outline {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .hero h1 {
+                font-size: 34px;
+            }
+            .section-title {
+                font-size: 32px;
+            }
+        }
+
+        .my-appointments {
+            margin-top: 30px;
+            background: #111;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .my-appointments h4 {
+            color: #c9a03d;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .appointment-item {
+            background: #1c1c1c;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .appointment-info {
+            font-size: 14px;
+        }
+
+        .cancel-btn, .reschedule-btn {
+            background: #3a1f1f;
+            border: none;
+            color: #ff9e8f;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 13px;
+        }
+
+        .reschedule-btn {
+            background: #2c5a2c;
+            color: #fff;
+        }
+
+        .empty-msg {
+            font-style: italic;
+            color: #aaa;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #c9a03d;
+        }
+
+        .auto-delete-info {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .reschedule-modal .modal-content {
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .reschedule-modal h3 {
+            color: #c9a03d;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .reschedule-modal .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .reschedule-modal .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #ddd;
+        }
+
+        .reschedule-modal .form-group input, 
+        .reschedule-modal .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .reschedule-modal .form-group input:focus, 
+        .reschedule-modal .form-group select:focus {
+            border-color: #c9a03d;
+            outline: none;
+        }
+
+        .reschedule-modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .reschedule-modal-buttons button {
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .confirm-reschedule-btn {
+            background: #c9a03d;
+            color: #0a0a0a;
+            border: none;
+        }
+
+        .cancel-reschedule-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+        }
+
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1f3a2c;
+            border-left: 5px solid #2ecc71;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: #b9f6ca;
+            z-index: 10000;
+            font-size: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast-notification.error {
+            background: #3a1f1f;
+            border-left-color: #e74c3c;
+            color: #ffb8b8;
+        }
+
+        .toast-notification.warning {
+            background: #3a2c1f;
+            border-left-color: #f39c12;
+            color: #ffe6b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-content">
+        <a href="#" class="logo">BARBER<span>STYLE</span></a>
+        <div class="mobile-menu-btn" id="mobileMenuBtn">
+            <i class="fas fa-cut"></i>
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home">Главная</a></li>
+            <li><a href="#services">Услуги</a></li>
+            <li><a href="#barbers">Барберы</a></li>
+            <li><a href="#booking">Запись</a></li>
+            <li><a href="#contacts">Контакты</a></li>
+            <li><a href="#" id="adminPanelBtn" class="admin-btn"><i class="fas fa-lock"></i> Вход для админа</a></li>
+        </ul>
+    </div>
+</header>
+
+<div id="rescheduleModal" class="modal reschedule-modal">
+    <div class="modal-content">
+        <span class="close-modal" id="closeRescheduleModal">&times;</span>
+        <h3><i class="fas fa-calendar-alt"></i> ПЕРЕНОС ЗАПИСИ</h3>
+        <div id="rescheduleModalBody">
+            <div class="form-group">
+                <label><i class="fas fa-calendar-day"></i> Новая дата</label>
+                <input type="date" id="newDate" class="new-date-input">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-clock"></i> Новое время</label>
+                <select id="newTime" class="new-time-select">
+                    <option value="20:00">20:00</option>
+                    <option value="20:30">20:30</option>
+                    <option value="21:00">21:00</option>
+                    <option value="21:30">21:30</option>
+                    <option value="22:00">22:00</option>
+                    <option value="23:00">23:00</option>
+                    <option value="23:30">23:30</option>
+                    <option value="00:00">00:00</option>
+                </select>
+            </div>
+            <div class="reschedule-modal-buttons">
+                <button class="confirm-reschedule-btn" id="confirmRescheduleBtn"><i class="fas fa-check"></i> Подтвердить</button>
+                <button class="cancel-reschedule-btn" id="cancelRescheduleModalBtn"><i class="fas fa-times"></i> Отмена</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 style="color:#c9a03d;">Панель администратора</h2>
+        <div id="adminPanelContent"></div>
+    </div>
+</div>
+
+<main>
+    <section id="home" class="hero">
+        <div class="container hero-content">
+            <h1>Истинная мужская <i class="fas fa-scissors"></i><br>Стиль & Харизма</h1>
+            <p>Стрижка — классика и современные тренды. Запишись на лучшую стрижку.</p>
+            <div>
+                <a href="#booking" class="btn">Записаться онлайн</a>
+                <a href="#services" class="btn btn-outline">наши услуги</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="services">
+        <div class="container">
+            <h2 class="section-title">Наши услуги</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon"><i class="fas fa-cut"></i></div>
+                    <h3>Мужская стрижка</h3>
+                    <p>Классика, андеркат, фейд, текстурные стрижки</p>
+                    <div class="price">от 200 ₽</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon"><i class="fas fa-hot-tub"></i></div>
+                    <h3>Комплекс VIP</h3>
+                    <p>Стрижка + уход</p>
+                    <div class="price">250 ₽</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="barbers" style="background: #080808;">
+        <div class="container">
+            <h2 class="section-title">Топ барберы</h2>
+            <div class="barbers-grid">
+                <div class="barber-card">
+                    <img src="https://i.ibb.co/0pm4C1db/MG-0139.jpg" alt="Barber Dmitry">
+                    <h3>Дмитрий "The Old school"</h3>
+                    <p>Я работаю один, помогите!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="booking" class="booking-section">
+        <div class="container">
+            <h2 class="section-title">Онлайн запись</h2>
+            <div class="booking-wrapper">
+                <div class="booking-info">
+                    <h3>Запишись на стрижку за 2 минуты</h3>
+                    <p>Выбери мастера, удобное время и получи отличную стрижку.</p>
+                    <ul class="info-list">
+                        <li><i class="fas fa-clock"></i> Понедельник-Вторник: 20:00 – 22:00, 23:00-00:00</li>
+                        <li><i class="fas fa-map-marker-alt"></i> г. Санкт-Петербург ВАС 3 этаж левое крыло</li>
+                        <li><i class="fas fa-phone-alt"></i> +7 (900) 280-98-35</li>
+                        <li><i class="fas fa-wine-bottle"></i> Напитки в подарок</li>
+                    </ul>
+                </div>
+                <div class="booking-form">
+                    <form id="appointmentForm">
+                        <div class="form-group">
+                            <label>Ваше имя *</label>
+                            <input type="text" id="clientName" placeholder="Алексей" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ваша фамилия *</label>
+                            <input type="text" id="clientSurname" placeholder="Петров" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ваша группа *</label>
+                            <input type="text" id="clientGroup" placeholder="2501" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон *</label>
+                            <input type="tel" id="clientPhone" placeholder="+7 900 123-45-67" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Услуга</label>
+                            <select id="serviceSelect">
+                                <option value="Мужская стрижка (200 ₽)">Мужская стрижка — 200 ₽</option>
+                                <option value="Комплекс VIP (250 ₽)">Комплекс VIP — 250 ₽</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Выберите мастера</label>
+                            <select id="barberSelect">
+                                <option value="Дмитрий The Old school">Дмитрий The Old school</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Дата *</label>
+                            <input type="date" id="appointmentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Время *</label>
+                            <select id="appointmentTime" required>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                                <option value="21:30">21:30</option>
+                                <option value="22:00">22:00</option>
+                                <option value="23:00">23:00</option>
+                                <option value="23:30">23:30</option>
+                                <option value="00:00">00:00</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Комментарий (опционально)</label>
+                            <textarea rows="2" id="comment" placeholder="Пожелания по стрижке..."></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn"><i class="fas fa-calendar-check"></i> Записаться сейчас</button>
+                        <div id="formSuccessMsg" class="success-message">✔ Заявка отправлена! Ждите подтверждения.</div>
+                    </form>
+                    <div class="my-appointments">
+                        <h4><i class="fas fa-list-ul"></i> Мои активные записи</h4>
+                        <div id="appointmentsList">
+                            <div class="empty-msg">Загрузка...</div>
+                        </div>
+                        <div class="auto-delete-info"><i class="fas fa-clock"></i> Просроченные записи удаляются автоматически</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contacts" class="contact-section">
+        <div class="container">
+            <h2 class="section-title">Контакты</h2>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <i class="fas fa-map-pin"></i>
+                    <h4>Адрес</h4>
+                    <p>г. Санкт-Петербург ВАС 3 этаж левое крыло</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <h4>Телефон</h4>
+                    <p>+7 (900) 280-98-35</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fab fa-telegram"></i>
+                    <h4>telegram</h4>
+                    <p>@kakosik3416</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>© 2026 BARBERSTYLE — мужская стрижка с характером. Все права защищены.</p>
+</footer>
+
+<script>
+    // ========== GOOGLE APPS SCRIPT URL (замените на ваш) ==========
+    const API_URL = "https://script.google.com/macros/s/AKfycby5ZDBm2NTl2gL2T18pEgum_7STT7cP7_pafpHAa0OgXVp8KOPGM-bAR2i-cougjFo48Q/exec";
+    // ===============================================================
+    
+    let appointments = [];
+    let isAdminLoggedIn = false;
+    let currentRescheduleId = null;
+    const ADMIN_PASSWORD = "admin123";
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function getTomorrowDate() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow.toISOString().split('T')[0];
+    }
+
+    function isAppointmentExpired(appointment) {
+        if (!appointment.date || !appointment.time) return false;
+        const [year, month, day] = appointment.date.split('-');
+        const [hours, minutes] = appointment.time.split(':');
+        const appointmentDateTime = new Date(year, month - 1, day, hours, minutes);
+        return appointmentDateTime < new Date();
+    }
+
+    function isAppointmentSoon(appointment) {
+        if (!appointment.date || !appointment.time) return false;
+        const [year, month, day] = appointment.date.split('-');
+        const [hours, minutes] = appointment.time.split(':');
+        const appointmentDateTime = new Date(year, month - 1, day, hours, minutes);
+        const diffMinutes = (appointmentDateTime - new Date()) / (1000 * 60);
+        return diffMinutes > 0 && diffMinutes <= 60;
+    }
+
+    async function loadAppointmentsFromServer() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Ошибка загрузки');
+            appointments = await response.json();
+            console.log('Загружено записей:', appointments.length);
+            renderAppointmentsList();
+            if (isAdminLoggedIn) renderAdminPanel();
+            return true;
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('appointmentsList').innerHTML = '<div class="empty-msg">❌ Ошибка подключения к серверу</div>';
+            return false;
+        }
+    }
+
+    async function addAppointmentToServer(appointment) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appointment)
+            });
+            if (!response.ok) throw new Error('Ошибка добавления');
+            await loadAppointmentsFromServer();
+            return true;
+        } catch (error) {
+            console.error('Ошибка добавления:', error);
+            return false;
+        }
+    }
+
+    async function deleteAppointmentFromServer(id, showMessage = true) {
+        try {
+            const response = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Ошибка удаления');
+            await loadAppointmentsFromServer();
+            if (showMessage) showToast('✅ Запись удалена', 'success');
+            return true;
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            if (showMessage) showToast('❌ Ошибка при удалении', 'error');
+            return false;
+        }
+    }
+
+    async function updateAppointmentOnServer(id, newDate, newTime) {
+        const oldAppointment = appointments.find(a => a.id == id);
+        if (!oldAppointment) return false;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(newDate) < today) {
+            showToast('❌ Нельзя перенести на прошедшую дату', 'error');
+            return false;
+        }
+        
+        for (let app of appointments) {
+            if (app.id == id) continue;
+            if (app.barber === oldAppointment.barber && app.date === newDate && app.time === newTime) {
+                showToast(`❌ Время ${newDate} ${newTime} уже занято!`, 'error');
+                return false;
+            }
+        }
+        
+        const updatedAppointment = { ...oldAppointment, date: newDate, time: newTime, rescheduled_at: new Date().toISOString() };
+        
+        try {
+            const response = await fetch(`${API_URL}?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedAppointment)
+            });
+            if (!response.ok) throw new Error('Ошибка обновления');
+            await loadAppointmentsFromServer();
+            showToast(`✅ Перенесено на ${newDate} в ${newTime}!`, 'success');
+            return true;
+        } catch (error) {
+            console.error('Ошибка обновления:', error);
+            showToast('❌ Ошибка при переносе', 'error');
+            return false;
+        }
+    }
+
+    function renderAppointmentsList() {
+        const container = document.getElementById('appointmentsList');
+        if (!container) return;
+        
+        const activeAppointments = appointments.filter(app => !isAppointmentExpired(app));
+        const currentPhone = localStorage.getItem('userPhone');
+        let userApps = currentPhone ? activeAppointments.filter(app => app.phone === currentPhone) : activeAppointments;
+        
+        if (userApps.length === 0) {
+            container.innerHTML = '<div class="empty-msg">Нет активных записей</div>';
+            return;
+        }
+        
+        let html = '';
+        userApps.forEach((app) => {
+            const isSoon = isAppointmentSoon(app);
+            html += `
+                <div class="appointment-item" ${isSoon ? 'style="border-left: 3px solid #ff9f4a;"' : ''}>
+                    <div class="appointment-info">
+                        <strong>${app.name} ${app.surname || ''}</strong> | ${app.service}<br>
+                        📅 ${app.date} в ${app.time}, мастер: ${app.barber}
+                        ${isSoon ? '<br><span style="color:#ff9f4a;">⚠️ Скоро!</span>' : ''}
+                    </div>
+                    <div class="button-group">
+                        <button class="reschedule-btn" data-id="${app.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                        <button class="cancel-btn" data-id="${app.id}"><i class="fas fa-trash"></i> Отменить</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        
+        document.querySelectorAll('.cancel-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                if (confirm('Отменить запись?')) {
+                    showToast('Удаление...', 'warning');
+                    await deleteAppointmentFromServer(id);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.reschedule-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                currentRescheduleId = parseInt(btn.getAttribute('data-id'));
+                document.getElementById('newDate').value = getTomorrowDate();
+                document.getElementById('rescheduleModal').style.display = 'flex';
+            });
+        });
+    }
+
+    function renderAdminPanel() {
+        const container = document.getElementById('adminPanelContent');
+        if (!container) return;
+        
+        if (!isAdminLoggedIn) {
+            container.innerHTML = `
+                <div class="admin-login-form">
+                    <h3>Вход в админ-панель</h3>
+                    <input type="password" id="adminPassword" placeholder="Пароль">
+                    <button id="doAdminLogin" class="btn">Войти</button>
+                </div>
+            `;
+            document.getElementById('doAdminLogin')?.addEventListener('click', () => {
+                if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+                    isAdminLoggedIn = true;
+                    updateAdminButton();
+                    renderAdminPanel();
+                } else alert('Неверный пароль');
+            });
+            return;
+        }
+        
+        const expiredApps = appointments.filter(isAppointmentExpired);
+        const activeApps = appointments.filter(a => !isAppointmentExpired(a));
+        
+        let html = `<h3>Все записи</h3>
+                    <p>✅ Активные: ${activeApps.length} | ⏰ Просроченные: ${expiredApps.length}</p>
+                    <button id="forceCleanExpiredBtn" class="btn" style="background:#c9a03d;">Удалить просроченные</button>
+                    <button id="refreshDataBtn" class="btn" style="background:#3a6ea5; margin-left:10px;">Обновить</button>
+                    <button id="exportAppointmentsBtn" class="btn export-btn" style="background:#2c5a2c; margin-left:10px;">Экспорт JSON</button>`;
+        
+        appointments.forEach((app) => {
+            const isExpired = isAppointmentExpired(app);
+            html += `
+                <div class="appointment-admin-item" ${isExpired ? 'style="border-left-color:#ff6b6b;opacity:0.7;"' : ''}>
+                    <strong>${app.name} ${app.surname || ''}</strong> (${app.phone})${isExpired ? ' ⏰ ПРОСРОЧЕНА' : ''}<br>
+                    Группа: ${app.group || '—'}<br>Услуга: ${app.service}<br>Мастер: ${app.barber}<br>
+                    Дата: ${app.date} в ${app.time}<br>Коммент: ${app.comment || '—'}<br>
+                    <button class="reschedule-admin-btn" data-id="${app.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="delete-admin-btn" data-id="${app.id}"><i class="fas fa-trash"></i> Удалить</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        
+        document.getElementById('forceCleanExpiredBtn')?.addEventListener('click', async () => {
+            const expiredList = appointments.filter(isAppointmentExpired);
+            if (expiredList.length === 0) { showToast('Нет просроченных', 'error'); return; }
+            if (confirm(`Удалить ${expiredList.length} записей?`)) {
+                for (const app of expiredList) await deleteAppointmentFromServer(app.id, false);
+                showToast(`Удалено ${expiredList.length}`, 'success');
+                renderAdminPanel();
+            }
+        });
+        
+        document.getElementById('refreshDataBtn')?.addEventListener('click', async () => {
+            await loadAppointmentsFromServer();
+            showToast('Данные обновлены');
+        });
+        
+        document.getElementById('exportAppointmentsBtn')?.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(appointments, null, 2)], {type: 'application/json'}));
+            a.download = `barber_${new Date().toISOString().slice(0,19)}.json`;
+            a.click();
+        });
+        
+        document.querySelectorAll('.delete-admin-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm('Удалить запись?')) await deleteAppointmentFromServer(btn.getAttribute('data-id'));
+            });
+        });
+        
+        document.querySelectorAll('.reschedule-admin-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentRescheduleId = parseInt(btn.getAttribute('data-id'));
+                document.getElementById('newDate').value = getTomorrowDate();
+                document.getElementById('rescheduleModal').style.display = 'flex';
+            });
+        });
+    }
+    
+    function updateAdminButton() {
+        const btn = document.getElementById('adminPanelBtn');
+        if (btn) btn.innerHTML = isAdminLoggedIn ? '<i class="fas fa-user-shield"></i> Панель админа' : '<i class="fas fa-lock"></i> Вход для админа';
+    }
+    
+    const adminModal = document.getElementById('adminModal');
+    const rescheduleModal = document.getElementById('rescheduleModal');
+    const closeAdminModal = document.querySelector('#adminModal .close-modal');
+    const closeRescheduleModal = document.getElementById('closeRescheduleModal');
+    const cancelRescheduleModalBtn = document.getElementById('cancelRescheduleModalBtn');
+    const confirmRescheduleBtn = document.getElementById('confirmRescheduleBtn');
+    
+    document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderAdminPanel();
+        adminModal.style.display = 'flex';
+    });
+    
+    if (closeAdminModal) closeAdminModal.addEventListener('click', () => adminModal.style.display = 'none');
+    if (closeRescheduleModal) closeRescheduleModal.addEventListener('click', () => rescheduleModal.style.display = 'none');
+    if (cancelRescheduleModalBtn) cancelRescheduleModalBtn.addEventListener('click', () => rescheduleModal.style.display = 'none');
+    
+    if (confirmRescheduleBtn) {
+        confirmRescheduleBtn.addEventListener('click', async () => {
+            const newDate = document.getElementById('newDate').value;
+            const newTime = document.getElementById('newTime').value;
+            if (!newDate || !newTime) { showToast('Выберите дату и время', 'error'); return; }
+            if (!currentRescheduleId) { showToast('Ошибка', 'error'); rescheduleModal.style.display = 'none'; return; }
+            showToast('Перенос...', 'warning');
+            if (await updateAppointmentOnServer(currentRescheduleId, newDate, newTime)) {
+                rescheduleModal.style.display = 'none';
+                currentRescheduleId = null;
+                if (isAdminLoggedIn) renderAdminPanel();
+            }
+        });
+    }
+    
+    window.addEventListener('click', (e) => {
+        if (e.target === adminModal) adminModal.style.display = 'none';
+        if (e.target === rescheduleModal) rescheduleModal.style.display = 'none';
+    });
+    
+    const form = document.getElementById('appointmentForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('clientName').value.trim();
+            const surname = document.getElementById('clientSurname').value.trim();
+            const group = document.getElementById('clientGroup').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const service = document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
+            const barber = document.getElementById('barberSelect').value;
+            const date = document.getElementById('appointmentDate').value;
+            const time = document.getElementById('appointmentTime').value;
+            const comment = document.getElementById('comment').value;
+            
+            if (!name || !phone || !date) { showToast('Заполните имя, телефон и дату', 'error'); return; }
+            if (new Date(date) < new Date().setHours(0,0,0,0)) { showToast('Выберите будущую дату', 'error'); return; }
+            for (let app of appointments) {
+                if (app.barber === barber && app.date === date && app.time === time) {
+                    showToast(`Время занято`, 'error');
+                    return;
+                }
+            }
+            
+            localStorage.setItem('userPhone', phone);
+            showToast('Отправка...', 'warning');
+            if (await addAppointmentToServer({ name, surname, group, phone, service, barber, date, time, comment, created_at: new Date().toISOString() })) {
+                document.getElementById('clientName').value = '';
+                document.getElementById('clientSurname').value = '';
+                document.getElementById('clientGroup').value = '';
+                document.getElementById('clientPhone').value = '';
+                document.getElementById('comment').value = '';
+                showToast(`✔ Вы записаны на ${date} в ${time}!`, 'success');
+                document.querySelector('.my-appointments').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showToast('Ошибка сервера', 'error');
+            }
+        });
+    }
+    
+    const dateInput = document.getElementById('appointmentDate');
+    if (dateInput) {
+        dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
+        dateInput.value = getTomorrowDate();
+    }
+    
+    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('active');
+    });
+    
+    document.querySelectorAll('.nav-links a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                e.preventDefault();
+                document.getElementById(href.substring(1)).scrollIntoView({ behavior: 'smooth' });
+                if (window.innerWidth <= 900) document.getElementById('navLinks').classList.remove('active');
+            }
+        });
+    });
+    
+    loadAppointmentsFromServer();
+    updateAdminButton();
+</script>
+</body>
+</html>
