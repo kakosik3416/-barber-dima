@@ -35,7 +35,6 @@
         .btn-outline:hover{background:#c9a03d;color:#0a0a0a;}
         .btn:hover{background:#b38f2e;transform:translateY(-3px);box-shadow:0 8px 20px rgba(201,160,61,0.3);}
         
-        /* Секции */
         section{padding:90px 0;}
         .section-title{text-align:center;font-size:42px;margin-bottom:60px;color:#fff;position:relative;}
         .section-title:after{content:'';display:block;width:80px;height:3px;background:#c9a03d;margin:15px auto 0;}
@@ -74,7 +73,7 @@
         .submit-btn{width:100%;padding:14px;background:#c9a03d;color:#0a0a0a;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:18px;transition:0.3s;}
         .submit-btn:hover{background:#e0b354;transform:scale(1.01);}
         
-        /* Мои записи (улучшенный дизайн) */
+        /* Мои записи */
         .my-appointments{margin-top:30px;background:#111;border-radius:12px;padding:20px;}
         .my-appointments h4{color:#c9a03d;margin-bottom:15px;font-size:20px;border-left:3px solid #c9a03d;padding-left:12px;}
         .appointment-item{background:#1c1c1c;padding:15px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;transition:0.2s;border:1px solid #2a2a2a;}
@@ -84,28 +83,13 @@
         .appointment-info .date-time{color:#aaa;font-size:13px;margin-top:5px;}
         .appointment-info .date-time i{margin-right:5px;color:#c9a03d;}
         .button-group{display:flex;gap:10px;}
-        .cancel-btn,.reschedule-btn{padding:8px 16px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:500;transition:0.2s;border:none;}
-        .cancel-btn{background:#3a1f1f;color:#ff9e8f;}
-        .cancel-btn:hover{background:#631e1e;color:#fff;transform:scale(1.02);}
-        .reschedule-btn{background:#2c5a2c;color:#fff;}
-        .reschedule-btn:hover{background:#3a7a3a;transform:scale(1.02);}
         
-        /* Админ-панель (улучшенный дизайн) */
-        .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
-        .admin-stats{display:flex;gap:20px;margin-bottom:20px;}
-        .stat-card{background:#1a1a1a;padding:15px 25px;border-radius:10px;text-align:center;flex:1;border-bottom:2px solid #c9a03d;}
-        .stat-card .number{font-size:32px;font-weight:700;color:#c9a03d;}
-        .stat-card .label{font-size:14px;color:#aaa;margin-top:5px;}
-        .appointment-admin-item{background:#1c1c1c;margin-bottom:12px;padding:15px;border-radius:10px;border-left:3px solid #c9a03d;transition:0.2s;}
-        .appointment-admin-item:hover{background:#222;}
-        .appointment-admin-item.expired{border-left-color:#ff6b6b;opacity:0.7;}
-        .appointment-admin-item strong{color:#c9a03d;}
-        .admin-item-buttons{margin-top:10px;display:flex;gap:10px;}
-        .delete-admin-btn,.reschedule-admin-btn{padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;border:none;transition:0.2s;}
-        .delete-admin-btn{background:#3a1f1f;color:#ff9e8f;}
-        .delete-admin-btn:hover{background:#631e1e;color:#fff;}
-        .reschedule-admin-btn{background:#2c5a2c;color:#fff;}
-        .reschedule-admin-btn:hover{background:#3a7a3a;}
+        /* Красивые кнопки */
+        .cancel-btn,.reschedule-btn{padding:8px 18px;border-radius:30px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.2s ease;border:none;display:inline-flex;align-items:center;gap:6px;}
+        .cancel-btn{background:#3a1f1f;color:#ff9e8f;}
+        .cancel-btn:hover{background:#631e1e;color:#fff;transform:translateY(-2px);box-shadow:0 4px 10px rgba(100,30,30,0.3);}
+        .reschedule-btn{background:#2c5a2c;color:#fff;}
+        .reschedule-btn:hover{background:#3a7a3a;transform:translateY(-2px);box-shadow:0 4px 10px rgba(60,120,60,0.3);}
         
         /* Контакты */
         .contact-section{background:#050505;}
@@ -131,12 +115,32 @@
         .cancel-btn-modal{background:#333;color:#fff;border:none;}
         .cancel-btn-modal:hover{background:#444;}
         
+        /* Админ-панель */
+        .admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+        .admin-stats{display:flex;gap:20px;margin-bottom:20px;}
+        .stat-card{background:#1a1a1a;padding:15px 25px;border-radius:10px;text-align:center;flex:1;border-bottom:2px solid #c9a03d;}
+        .stat-card .number{font-size:32px;font-weight:700;color:#c9a03d;}
+        .stat-card .label{font-size:14px;color:#aaa;margin-top:5px;}
+        .appointment-admin-item{background:#1c1c1c;margin-bottom:12px;padding:15px;border-radius:10px;border-left:3px solid #c9a03d;transition:0.2s;}
+        .appointment-admin-item:hover{background:#222;}
+        .appointment-admin-item.expired{border-left-color:#ff6b6b;opacity:0.7;}
+        .appointment-admin-item strong{color:#c9a03d;}
+        .admin-item-buttons{margin-top:10px;display:flex;gap:10px;}
+        .admin-item-buttons button{padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;border:none;transition:0.2s;display:inline-flex;align-items:center;gap:5px;}
+        .delete-admin-btn{background:#3a1f1f;color:#ff9e8f;}
+        .delete-admin-btn:hover{background:#631e1e;color:#fff;transform:translateY(-1px);}
+        .reschedule-admin-btn{background:#2c5a2c;color:#fff;}
+        .reschedule-admin-btn:hover{background:#3a7a3a;transform:translateY(-1px);}
+        .logout-admin-btn{background:#333;color:#fff;margin-left:10px;}
+        .logout-admin-btn:hover{background:#555;}
+        
         /* Уведомления */
         .toast{position:fixed;bottom:30px;right:30px;background:#1f3a2c;border-left:5px solid #2ecc71;padding:15px 25px;border-radius:8px;color:#b9f6ca;z-index:10000;animation:slideIn 0.3s;box-shadow:0 5px 20px rgba(0,0,0,0.3);}
         .toast.error{background:#3a1f1f;border-left-color:#e74c3c;color:#ffb8b8;}
         @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
         
-        /* Адаптив */
+        .empty-msg{font-style:italic;color:#aaa;text-align:center;padding:20px;}
+        
         @media(max-width:900px){
             .booking-wrapper{grid-template-columns:1fr;}
             .hero h1{font-size:44px;}
@@ -144,6 +148,7 @@
             .nav-links.active{display:flex;}
             .mobile-menu-btn{display:block;}
             .btn-outline{margin-left:0;margin-top:10px;}
+            .admin-stats{flex-direction:column;}
         }
         @media(max-width:550px){
             .hero h1{font-size:34px;}
@@ -242,11 +247,17 @@
         return new Date(y, m - 1, d, h, min) < new Date();
     }
 
+    // Генерация уникального ID
+    function generateId() {
+        return Date.now().toString() + '-' + Math.random().toString(36).substr(2, 8);
+    }
+
     async function load() {
         try {
             let r = await fetch(API_URL);
             if (!r.ok) throw new Error();
             let data = await r.json();
+            // Фильтруем пустые записи и добавляем уникальный ID если его нет
             appointments = data.filter(a => a.name && a.name.trim() !== '');
             renderUser();
             if (isAdmin) renderAdmin();
@@ -257,19 +268,29 @@
 
     async function addApp(a) {
         try {
+            let newApp = { ...a, unique_id: generateId() };
             let r = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(a)
+                body: JSON.stringify(newApp)
             });
             if (r.ok) { await load(); return true; }
             return false;
         } catch (e) { return false; }
     }
 
-    async function deleteByRow(row) {
+    async function deleteAppByUniqueId(uniqueId) {
         try {
-            let r = await fetch(`${API_URL}/${row}`, { method: 'DELETE' });
+            // Ищем запись с таким unique_id
+            let appToDelete = appointments.find(a => a.unique_id === uniqueId);
+            if (!appToDelete) return false;
+            
+            // Находим её индекс в массиве для удаления по номеру строки
+            let index = appointments.findIndex(a => a.unique_id === uniqueId);
+            if (index === -1) return false;
+            
+            let rowNumber = index + 1;
+            let r = await fetch(`${API_URL}/${rowNumber}`, { method: 'DELETE' });
             if (r.ok) { await load(); return true; }
             return false;
         } catch (e) { return false; }
@@ -284,16 +305,12 @@
         }
         
         for (let a of appointments) {
-            if (a.id === oldApp.id) continue;
+            if (a.unique_id === oldApp.unique_id) continue;
             if (a.barber === oldApp.barber && a.date === newDate && a.time === newTime) {
                 toast(`❌ Время ${newDate} ${newTime} уже занято`, 'error');
                 return false;
             }
         }
-        
-        let rowIndex = appointments.findIndex(a => a.id === oldApp.id);
-        if (rowIndex === -1) return false;
-        let rowNumber = rowIndex + 1;
         
         let newApp = {
             name: oldApp.name,
@@ -305,10 +322,11 @@
             date: newDate,
             time: newTime,
             comment: oldApp.comment,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            unique_id: generateId()
         };
         
-        let deleteSuccess = await deleteByRow(rowNumber);
+        let deleteSuccess = await deleteAppByUniqueId(oldApp.unique_id);
         if (!deleteSuccess) {
             toast('❌ Ошибка при удалении старой записи', 'error');
             return false;
@@ -345,8 +363,8 @@
                     <div class="date-time"><i class="fas fa-calendar-alt"></i> ${a.date} в ${a.time} | <i class="fas fa-cut"></i> мастер: ${a.barber}</div>
                 </div>
                 <div class="button-group">
-                    <button class="reschedule-btn" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="cancel-btn" data-id="${a.id}"><i class="fas fa-trash"></i> Отменить</button>
+                    <button class="reschedule-btn" data-id="${a.unique_id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="cancel-btn" data-id="${a.unique_id}"><i class="fas fa-trash"></i> Отменить</button>
                 </div>
             </div>`;
         });
@@ -355,9 +373,8 @@
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
-                let rowIndex = appointments.findIndex(a => a.id == id);
-                if (rowIndex !== -1 && confirm('Отменить запись?')) {
-                    if (await deleteByRow(rowIndex + 1)) {
+                if (confirm('Отменить запись?')) {
+                    if (await deleteAppByUniqueId(id)) {
                         toast('✅ Запись отменена');
                     } else {
                         toast('❌ Ошибка отмены', 'error');
@@ -369,7 +386,7 @@
         document.querySelectorAll('.reschedule-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 let id = btn.dataset.id;
-                currentRescheduleApp = appointments.find(a => a.id == id);
+                currentRescheduleApp = appointments.find(a => a.unique_id === id);
                 document.getElementById('newDate').value = getTomorrow();
                 document.getElementById('rescheduleModal').style.display = 'flex';
             });
@@ -381,7 +398,11 @@
         if (!cont) return;
         
         if (!isAdmin) {
-            cont.innerHTML = `<div style="text-align:center;"><h3 style="color:#c9a03d;">Вход в админ-панель</h3><input type="password" id="adminPass" placeholder="Пароль" style="width:100%;padding:12px;margin:15px 0;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;"><button id="doLogin" class="btn" style="width:100%;">Войти</button></div>`;
+            cont.innerHTML = `<div style="text-align:center;">
+                <h3 style="color:#c9a03d;">Вход в админ-панель</h3>
+                <input type="password" id="adminPass" placeholder="Пароль" style="width:100%;padding:12px;margin:15px 0;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:8px;">
+                <button id="doLogin" class="btn" style="width:100%;">Войти</button>
+            </div>`;
             document.getElementById('doLogin')?.addEventListener('click', () => {
                 if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
                     isAdmin = true;
@@ -396,8 +417,9 @@
         let expired = appointments.filter(isExpired);
         let active = appointments.filter(a => !isExpired(a));
         
-        let html = `<div class="admin-header">
-            <h3><i class="fas fa-database"></i> Все записи</h3>
+        let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+            <h3 style="color:#c9a03d;"><i class="fas fa-database"></i> Все записи</h3>
+            <button id="logoutAdminBtn" class="btn" style="background:#333;padding:6px 12px;font-size:14px;"><i class="fas fa-sign-out-alt"></i> Выйти</button>
         </div>
         <div class="admin-stats">
             <div class="stat-card"><div class="number">${appointments.length}</div><div class="label">Всего записей</div></div>
@@ -410,7 +432,7 @@
             <button id="export" class="btn" style="background:#2c5a2c;margin-left:10px;"><i class="fas fa-download"></i> Экспорт JSON</button>
         </div>`;
         
-        appointments.forEach((a, idx) => {
+        appointments.forEach(a => {
             let isExp = isExpired(a);
             html += `<div class="appointment-admin-item ${isExp ? 'expired' : ''}">
                 <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExp ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
@@ -420,12 +442,19 @@
                 <i class="fas fa-calendar-alt"></i> Дата: ${a.date} в ${a.time}<br>
                 <i class="fas fa-comment"></i> Коммент: ${a.comment || '—'}<br>
                 <div class="admin-item-buttons">
-                    <button class="reschedule-admin" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="delete-admin" data-row="${idx + 1}"><i class="fas fa-trash"></i> Удалить</button>
+                    <button class="reschedule-admin" data-id="${a.unique_id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="delete-admin" data-id="${a.unique_id}"><i class="fas fa-trash"></i> Удалить</button>
                 </div>
             </div>`;
         });
         cont.innerHTML = html;
+        
+        document.getElementById('logoutAdminBtn')?.addEventListener('click', () => {
+            isAdmin = false;
+            renderAdmin();
+            document.getElementById('adminModal').style.display = 'none';
+            toast('Вы вышли из панели администратора');
+        });
         
         document.getElementById('cleanExpired')?.addEventListener('click', async () => {
             let expiredList = appointments.filter(isExpired);
@@ -433,8 +462,7 @@
             if (confirm(`Удалить ${expiredList.length} просроченных записей?`)) {
                 let deleted = 0;
                 for (let a of expiredList) {
-                    let idx = appointments.findIndex(app => app.id === a.id);
-                    if (idx !== -1 && await deleteByRow(idx + 1)) deleted++;
+                    if (await deleteAppByUniqueId(a.unique_id)) deleted++;
                 }
                 toast(`Удалено ${deleted} записей`);
                 renderAdmin();
@@ -451,9 +479,9 @@
         
         document.querySelectorAll('.delete-admin').forEach(btn => {
             btn.addEventListener('click', async () => {
-                let row = btn.dataset.row;
+                let id = btn.dataset.id;
                 if (confirm('Удалить запись?')) {
-                    if (await deleteByRow(row)) {
+                    if (await deleteAppByUniqueId(id)) {
                         toast('✅ Запись удалена');
                         renderAdmin();
                     } else {
@@ -466,7 +494,7 @@
         document.querySelectorAll('.reschedule-admin').forEach(btn => {
             btn.addEventListener('click', () => {
                 let id = btn.dataset.id;
-                currentRescheduleApp = appointments.find(a => a.id == id);
+                currentRescheduleApp = appointments.find(a => a.unique_id === id);
                 document.getElementById('newDate').value = getTomorrow();
                 document.getElementById('rescheduleModal').style.display = 'flex';
             });
