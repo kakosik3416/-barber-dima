@@ -20,7 +20,6 @@
         .nav-links a{text-decoration:none;color:#ddd;transition:0.3s;font-size:16px;}
         .nav-links a:hover{color:#c9a03d;}
         .admin-btn{background:#c9a03d;color:#0a0a0a!important;padding:6px 14px;border-radius:4px;font-weight:bold;}
-        .admin-btn:hover{background:#b38f2e;color:#fff!important;}
         .mobile-menu-btn{display:none;font-size:28px;color:#c9a03d;cursor:pointer;}
         .hero{min-height:100vh;background:linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.8)),url('https://images.pexels.com/photos/3998418/pexels-photo-3998418.jpeg?auto=compress&cs=tinysrgb&w=1600')center/cover fixed;display:flex;align-items:center;text-align:center;padding-top:80px;}
         .hero h1{font-size:64px;color:#fff;text-shadow:2px 2px 10px rgba(0,0,0,0.6);}
@@ -31,16 +30,16 @@
         .btn-outline:hover{background:#c9a03d;color:#0a0a0a;}
         .btn:hover{background:#b38f2e;transform:translateY(-3px);box-shadow:0 8px 20px rgba(201,160,61,0.3);}
         section{padding:90px 0;}
-        .section-title{text-align:center;font-size:42px;margin-bottom:60px;color:#fff;position:relative;}
+        .section-title{text-align:center;font-size:42px;margin-bottom:60px;color:#fff;}
         .section-title:after{content:'';display:block;width:80px;height:3px;background:#c9a03d;margin:15px auto 0;}
         .services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:35px;}
         .service-card{background:#111;padding:35px;text-align:center;border-radius:8px;border-bottom:2px solid #c9a03d;transition:0.3s;}
         .service-card:hover{transform:translateY(-8px);background:#161616;}
         .service-icon{font-size:48px;color:#c9a03d;margin-bottom:20px;}
-        .service-card h3{font-size:26px;margin-bottom:10px;}
+        .service-card h3{font-size:26px;}
         .price{font-size:28px;font-weight:700;color:#c9a03d;margin:15px 0;}
         .barbers-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:40px;}
-        .barber-card{background:#111;border-radius:10px;overflow:hidden;text-align:center;transition:0.3s;}
+        .barber-card{background:#111;border-radius:10px;overflow:hidden;text-align:center;}
         .barber-card img{width:100%;height:300px;object-fit:cover;filter:grayscale(0.3);transition:0.4s;}
         .barber-card:hover img{filter:grayscale(0);transform:scale(1.02);}
         .barber-card h3{margin-top:20px;font-size:24px;}
@@ -191,12 +190,13 @@
 <footer><p>© 2026 BARBERSTYLE — мужская стрижка с характером</p></footer>
 
 <script>
-    const API_URL = "https://sheetdb.io/api/v1/k3fw460qtitqm";
+    // ========== ВСТАВЬТЕ ВАШ URL ОТ GOOGLE APPS SCRIPT ==========
+    const API_URL = "https://script.google.com/macros/s/AKfycbx_gFmJKWIx1UaJh-ILbAjE1VUVNBiiQUa0GEj2zeG5hoTdEpSJvjT74DvIJgjK2kCi/exec";
+    // ============================================================
     
     let appointments = [];
     let isAdmin = false;
-    let currentRescheduleApp = null;
-    let currentRescheduleRow = null;
+    let currentRescheduleId = null;
     const ADMIN_PASSWORD = "admin123";
 
     function toast(msg, type = 'success') {
@@ -224,8 +224,7 @@
         try {
             let r = await fetch(API_URL);
             if (!r.ok) throw new Error();
-            let data = await r.json();
-            appointments = data.filter(a => a.name && a.name.trim() !== '');
+            appointments = await r.json();
             console.log('Загружено записей:', appointments.length);
             renderUser();
             if (isAdmin) renderAdmin();
@@ -246,58 +245,36 @@
         } catch (e) { return false; }
     }
 
-    // Удаление по номеру строки
-    async function deleteByRow(row) {
+    async function deleteApp(id) {
         try {
-            let r = await fetch(`${API_URL}/${row}`, { method: 'DELETE' });
-            if (r.ok) { await load(); return true; }
+            let r = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            if (r.ok) { await load(); toast('✅ Запись удалена'); return true; }
             return false;
-        } catch (e) { return false; }
+        } catch (e) { toast('❌ Ошибка удаления', 'error'); return false; }
     }
 
-    async function rescheduleApp(oldApp, newDate, newTime, rowNumber) {
-        let today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (new Date(newDate) < today) {
-            toast('❌ Нельзя перенести на прошедшую дату', 'error');
-            return false;
-        }
+    async function updateApp(id, newDate, newTime) {
+        let old = appointments.find(a => a.id == id);
+        if (!old) return false;
         
         for (let a of appointments) {
-            if (a === oldApp) continue;
-            if (a.barber === oldApp.barber && a.date === newDate && a.time === newTime) {
+            if (a.id == id) continue;
+            if (a.barber == old.barber && a.date == newDate && a.time == newTime) {
                 toast(`❌ Время ${newDate} ${newTime} уже занято`, 'error');
                 return false;
             }
         }
         
-        let newApp = {
-            name: oldApp.name,
-            surname: oldApp.surname,
-            group: oldApp.group,
-            phone: oldApp.phone,
-            service: oldApp.service,
-            barber: oldApp.barber,
-            date: newDate,
-            time: newTime,
-            comment: oldApp.comment,
-            created_at: new Date().toISOString()
-        };
-        
-        let deleteSuccess = await deleteByRow(rowNumber);
-        if (!deleteSuccess) {
-            toast('❌ Ошибка при удалении старой записи', 'error');
+        let updated = { ...old, date: newDate, time: newTime };
+        try {
+            let r = await fetch(`${API_URL}?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            if (r.ok) { await load(); toast(`✅ Запись перенесена на ${newDate} в ${newTime}`); return true; }
             return false;
-        }
-        
-        let addSuccess = await addApp(newApp);
-        if (addSuccess) {
-            toast(`✅ Запись перенесена на ${newDate} в ${newTime}`);
-            return true;
-        } else {
-            toast('❌ Ошибка при создании новой записи', 'error');
-            return false;
-        }
+        } catch (e) { toast('❌ Ошибка переноса', 'error'); return false; }
     }
 
     function renderUser() {
@@ -314,17 +291,15 @@
         }
         
         let html = '';
-        user.forEach((a, idx) => {
-            let globalIndex = appointments.findIndex(app => app === a);
-            let rowNumber = globalIndex + 1;
+        user.forEach(a => {
             html += `<div class="appointment-item">
                 <div class="appointment-info">
                     <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> | ${a.service}<br>
                     <div class="date-time"><i class="fas fa-calendar-alt"></i> ${a.date} в ${a.time} | <i class="fas fa-cut"></i> мастер: ${a.barber}</div>
                 </div>
                 <div class="button-group">
-                    <button class="reschedule-btn" data-row="${rowNumber}" data-name="${a.name}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="cancel-btn" data-row="${rowNumber}"><i class="fas fa-trash"></i> Отменить</button>
+                    <button class="reschedule-btn" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="cancel-btn" data-id="${a.id}"><i class="fas fa-trash"></i> Отменить</button>
                 </div>
             </div>`;
         });
@@ -332,29 +307,16 @@
         
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                let row = btn.dataset.row;
-                if (confirm('Отменить запись?')) {
-                    if (await deleteByRow(row)) {
-                        toast('✅ Запись отменена');
-                    } else {
-                        toast('❌ Ошибка отмены', 'error');
-                    }
-                }
+                let id = btn.dataset.id;
+                if (confirm('Отменить запись?')) await deleteApp(id);
             });
         });
         
         document.querySelectorAll('.reschedule-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                let row = parseInt(btn.dataset.row);
-                let app = appointments[row - 1];
-                if (app) {
-                    currentRescheduleApp = app;
-                    currentRescheduleRow = row;
-                    document.getElementById('newDate').value = getTomorrow();
-                    document.getElementById('rescheduleModal').style.display = 'flex';
-                } else {
-                    toast('❌ Запись не найдена', 'error');
-                }
+                currentRescheduleId = btn.dataset.id;
+                document.getElementById('newDate').value = getTomorrow();
+                document.getElementById('rescheduleModal').style.display = 'flex';
             });
         });
     }
@@ -398,19 +360,17 @@
             <button id="export" class="btn" style="background:#2c5a2c;margin-left:10px;"><i class="fas fa-download"></i> Экспорт JSON</button>
         </div>`;
         
-        appointments.forEach((a, idx) => {
-            let rowNumber = idx + 1;
-            let isExp = isExpired(a);
-            html += `<div class="appointment-admin-item ${isExp ? 'expired' : ''}">
-                <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExp ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
+        appointments.forEach(a => {
+            html += `<div class="appointment-admin-item ${isExpired(a) ? 'expired' : ''}">
+                <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExpired(a) ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
                 <i class="fas fa-users"></i> Группа: ${a.group || '—'}<br>
                 <i class="fas fa-cut"></i> Услуга: ${a.service}<br>
                 <i class="fas fa-user-md"></i> Мастер: ${a.barber}<br>
                 <i class="fas fa-calendar-alt"></i> Дата: ${a.date} в ${a.time}<br>
                 <i class="fas fa-comment"></i> Коммент: ${a.comment || '—'}<br>
                 <div class="admin-item-buttons">
-                    <button class="reschedule-admin" data-row="${rowNumber}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="delete-admin" data-row="${rowNumber}"><i class="fas fa-trash"></i> Удалить</button>
+                    <button class="reschedule-admin" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="delete-admin" data-id="${a.id}"><i class="fas fa-trash"></i> Удалить</button>
                 </div>
             </div>`;
         });
@@ -424,16 +384,11 @@
         });
         
         document.getElementById('cleanExpired')?.addEventListener('click', async () => {
-            let expiredList = appointments.filter(isExpired);
-            if (expiredList.length === 0) { toast('Нет просроченных записей', 'error'); return; }
-            if (confirm(`Удалить ${expiredList.length} просроченных записей?`)) {
-                let deleted = 0;
-                for (let i = appointments.length - 1; i >= 0; i--) {
-                    if (isExpired(appointments[i])) {
-                        if (await deleteByRow(i + 1)) deleted++;
-                    }
-                }
-                toast(`Удалено ${deleted} записей`);
+            let ex = appointments.filter(isExpired);
+            if (ex.length === 0) { toast('Нет просроченных записей', 'error'); return; }
+            if (confirm(`Удалить ${ex.length} просроченных записей?`)) {
+                for (let a of ex) await deleteApp(a.id);
+                toast(`Удалено ${ex.length} записей`);
                 renderAdmin();
             }
         });
@@ -448,35 +403,19 @@
         
         document.querySelectorAll('.delete-admin').forEach(btn => {
             btn.addEventListener('click', async () => {
-                let row = btn.dataset.row;
-                if (confirm('Удалить запись?')) {
-                    if (await deleteByRow(row)) {
-                        toast('✅ Запись удалена');
-                        renderAdmin();
-                    } else {
-                        toast('❌ Ошибка удаления', 'error');
-                    }
-                }
+                if (confirm('Удалить запись?')) await deleteApp(btn.dataset.id);
             });
         });
         
         document.querySelectorAll('.reschedule-admin').forEach(btn => {
             btn.addEventListener('click', () => {
-                let row = parseInt(btn.dataset.row);
-                let app = appointments[row - 1];
-                if (app) {
-                    currentRescheduleApp = app;
-                    currentRescheduleRow = row;
-                    document.getElementById('newDate').value = getTomorrow();
-                    document.getElementById('rescheduleModal').style.display = 'flex';
-                } else {
-                    toast('❌ Запись не найдена', 'error');
-                }
+                currentRescheduleId = btn.dataset.id;
+                document.getElementById('newDate').value = getTomorrow();
+                document.getElementById('rescheduleModal').style.display = 'flex';
             });
         });
     }
 
-    // Модальные окна
     document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
         e.preventDefault();
         renderAdmin();
@@ -503,14 +442,17 @@
         let nt = document.getElementById('newTime').value;
         
         if (!nd || !nt) { toast('Выберите новую дату и время', 'error'); return; }
-        if (!currentRescheduleApp || !currentRescheduleRow) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
+        if (!currentRescheduleId) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
+        
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(nd) < today) { toast('❌ Нельзя перенести на прошедшую дату', 'error'); return; }
         
         toast('Перенос записи...', 'error');
-        let success = await rescheduleApp(currentRescheduleApp, nd, nt, currentRescheduleRow);
+        let success = await updateApp(currentRescheduleId, nd, nt);
         if (success) {
             document.getElementById('rescheduleModal').style.display = 'none';
-            currentRescheduleApp = null;
-            currentRescheduleRow = null;
+            currentRescheduleId = null;
             if (isAdmin) renderAdmin();
         }
     });
@@ -520,7 +462,6 @@
         if (e.target == document.getElementById('rescheduleModal')) document.getElementById('rescheduleModal').style.display = 'none';
     };
 
-    // Форма записи
     document.getElementById('appointmentForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
