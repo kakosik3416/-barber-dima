@@ -100,7 +100,11 @@
         <h3 style="color:#c9a03d;margin-bottom:20px;text-align:center;"><i class="fas fa-calendar-alt"></i> ПЕРЕНОС ЗАПИСИ</h3>
         <div class="form-group"><label>Новая дата</label><input type="date" id="newDate"></div>
         <div class="form-group"><label>Новое время</label>
-            <select id="newTime"><option value="20:00">20:00</option><option value="20:30">20:30</option><option value="21:00">21:00</option><option value="21:30">21:30</option><option value="22:00">22:00</option><option value="23:00">23:00</option><option value="23:30">23:30</option><option value="00:00">00:00</option></select>
+            <select id="newTime">
+                <option value="20:00">20:00</option><option value="20:30">20:30</option><option value="21:00">21:00</option>
+                <option value="21:30">21:30</option><option value="22:00">22:00</option><option value="23:00">23:00</option>
+                <option value="23:30">23:30</option><option value="00:00">00:00</option>
+            </select>
         </div>
         <div style="display:flex;gap:15px;justify-content:center;margin-top:20px;">
             <button class="confirm-reschedule-btn" id="confirmRescheduleBtn" style="background:#c9a03d;color:#0a0a0a;border:none;padding:10px 25px;border-radius:6px;cursor:pointer;">Подтвердить</button>
@@ -125,137 +129,384 @@
 <footer><p>© 2026 BARBERSTYLE — мужская стрижка с характером</p></footer>
 
 <script>
-    // ========== ВСТАВЬТЕ ВАШ URL ОТ GOOGLE APPS SCRIPT ==========
+    // ========== ВАШ URL ОТ GOOGLE APPS SCRIPT ==========
     const API_URL = "https://script.google.com/macros/s/AKfycby5ZDBm2NTl2gL2T18pEgum_7STT7cP7_pafpHAa0OgXVp8KOPGM-bAR2i-cougjFo48Q/exec";
-    // ============================================================
+    // ===================================================
     
-    let appointments = [], isAdmin = false, currentRescheduleId = null;
+    let appointments = [];
+    let isAdmin = false;
+    let currentRescheduleId = null;
     const ADMIN_PASSWORD = "admin123";
 
-    function toast(msg, type='success'){let d=document.createElement('div');d.className=`toast ${type}`;d.innerHTML=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3500);}
-    function getTomorrow(){let d=new Date();d.setDate(d.getDate()+1);return d.toISOString().split('T')[0];}
-    function isExpired(a){if(!a.date||!a.time)return false;let [y,m,d]=a.date.split('-'),[h,min]=a.time.split(':');return new Date(y,m-1,d,h,min)<new Date();}
+    function toast(msg, type = 'success') {
+        let div = document.createElement('div');
+        div.className = `toast ${type}`;
+        div.innerHTML = msg;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 3500);
+    }
 
-    async function load(){
-        try{
-            let r=await fetch(API_URL);
-            if(!r.ok)throw new Error();
-            appointments=await r.json();
+    function getTomorrow() {
+        let d = new Date();
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+    }
+
+    function isExpired(a) {
+        if (!a.date || !a.time) return false;
+        let [y, m, d] = a.date.split('-');
+        let [h, min] = a.time.split(':');
+        return new Date(y, m - 1, d, h, min) < new Date();
+    }
+
+    // ЗАГРУЗКА ЗАПИСЕЙ
+    async function load() {
+        try {
+            let r = await fetch(API_URL);
+            if (!r.ok) throw new Error();
+            appointments = await r.json();
             renderUser();
-            if(isAdmin)renderAdmin();
-        }catch(e){document.getElementById('appointmentsList').innerHTML='<div class="empty-msg">❌ Ошибка</div>';}
+            if (isAdmin) renderAdmin();
+        } catch (e) {
+            document.getElementById('appointmentsList').innerHTML = '<div class="empty-msg">❌ Ошибка подключения</div>';
+        }
     }
 
-    async function addApp(a){
-        try{
-            let r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a)});
-            if(r.ok){await load();return true;}
+    // ДОБАВЛЕНИЕ ЗАПИСИ
+    async function addApp(a) {
+        try {
+            let r = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(a)
+            });
+            if (r.ok) {
+                await load();
+                return true;
+            }
             return false;
-        }catch(e){return false;}
-    }
-
-    async function deleteApp(id){
-        try{
-            let r=await fetch(`${API_URL}?id=${id}`,{method:'DELETE'});
-            if(r.ok){await load();toast('✅ Удалено');return true;}
+        } catch (e) {
             return false;
-        }catch(e){toast('❌ Ошибка','error');return false;}
+        }
     }
 
-    async function updateApp(id,newDate,newTime){
-        let old=appointments.find(a=>a.id==id);
-        if(!old)return false;
-        for(let a of appointments){
-            if(a.id==id)continue;
-            if(a.barber==old.barber&&a.date==newDate&&a.time==newTime){
-                toast(`❌ Время ${newDate} ${newTime} занято`,'error');
+    // УДАЛЕНИЕ ЗАПИСИ
+    async function deleteApp(id) {
+        try {
+            let r = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            if (r.ok) {
+                await load();
+                toast('✅ Запись удалена');
+                return true;
+            }
+            return false;
+        } catch (e) {
+            toast('❌ Ошибка удаления', 'error');
+            return false;
+        }
+    }
+
+    // ПЕРЕНОС ЗАПИСИ (исправленная версия)
+    async function updateApp(id, newDate, newTime) {
+        let old = appointments.find(a => a.id == id);
+        if (!old) return false;
+        
+        // Проверка занятости времени
+        for (let a of appointments) {
+            if (a.id == id) continue;
+            if (a.barber == old.barber && a.date == newDate && a.time == newTime) {
+                toast(`❌ Время ${newDate} ${newTime} уже занято`, 'error');
                 return false;
             }
         }
-        let updated={...old,date:newDate,time:newTime};
-        try{
-            let r=await fetch(`${API_URL}?id=${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)});
-            if(r.ok){await load();toast(`✅ Перенесено на ${newDate} в ${newTime}`);return true;}
+        
+        let updated = {
+            name: old.name,
+            surname: old.surname,
+            group: old.group,
+            phone: old.phone,
+            service: old.service,
+            barber: old.barber,
+            date: newDate,
+            time: newTime,
+            comment: old.comment,
+            created_at: old.created_at
+        };
+        
+        try {
+            // Пробуем PUT-запрос
+            let r = await fetch(`${API_URL}?id=${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            });
+            
+            if (r.ok) {
+                await load();
+                toast(`✅ Запись перенесена на ${newDate} в ${newTime}`);
+                return true;
+            }
+            
+            // Если PUT не сработал, пробуем DELETE + POST
+            let deleteResult = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+            if (deleteResult.ok) {
+                let postResult = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated)
+                });
+                if (postResult.ok) {
+                    await load();
+                    toast(`✅ Запись перенесена на ${newDate} в ${newTime}`);
+                    return true;
+                }
+            }
+            throw new Error('Ошибка переноса');
+        } catch (e) {
+            toast('❌ Ошибка переноса записи', 'error');
             return false;
-        }catch(e){toast('❌ Ошибка переноса','error');return false;}
+        }
     }
 
-    function renderUser(){
-        let cont=document.getElementById('appointmentsList');
-        if(!cont)return;
-        let active=appointments.filter(a=>!isExpired(a));
-        let phone=localStorage.getItem('userPhone');
-        let user=phone?active.filter(a=>a.phone==phone):active;
-        if(user.length==0){cont.innerHTML='<div class="empty-msg">Нет записей</div>';return;}
-        let html='';
-        user.forEach(a=>{
-            html+=`<div class="appointment-item"><div><strong>${a.name} ${a.surname||''}</strong> | ${a.service}<br>📅 ${a.date} в ${a.time}, мастер: ${a.barber}</div>
-            <div class="button-group"><button class="reschedule-btn" data-id="${a.id}">Перенести</button><button class="cancel-btn" data-id="${a.id}">Отменить</button></div></div>`;
-        });
-        cont.innerHTML=html;
-        document.querySelectorAll('.cancel-btn').forEach(btn=>btn.addEventListener('click',async()=>{if(confirm('Отменить?'))await deleteApp(btn.dataset.id);}));
-        document.querySelectorAll('.reschedule-btn').forEach(btn=>btn.addEventListener('click',()=>{currentRescheduleId=btn.dataset.id;document.getElementById('newDate').value=getTomorrow();document.getElementById('rescheduleModal').style.display='flex';}));
-    }
-
-    function renderAdmin(){
-        let cont=document.getElementById('adminPanelContent');
-        if(!cont)return;
-        if(!isAdmin){
-            cont.innerHTML=`<div><h3>Вход</h3><input type="password" id="adminPass"><button id="doLogin" class="btn">Войти</button></div>`;
-            document.getElementById('doLogin')?.addEventListener('click',()=>{if(document.getElementById('adminPass').value===ADMIN_PASSWORD){isAdmin=true;renderAdmin();}else alert('Неверный пароль');});
+    // ОТРИСОВКА ДЛЯ ПОЛЬЗОВАТЕЛЯ
+    function renderUser() {
+        let cont = document.getElementById('appointmentsList');
+        if (!cont) return;
+        
+        let active = appointments.filter(a => !isExpired(a));
+        let phone = localStorage.getItem('userPhone');
+        let user = phone ? active.filter(a => a.phone == phone) : active;
+        
+        if (user.length == 0) {
+            cont.innerHTML = '<div class="empty-msg">Нет активных записей</div>';
             return;
         }
-        let expired=appointments.filter(isExpired);
-        let html=`<h3>Все записи (${appointments.length})</h3><p>Активные: ${appointments.length-expired.length} | Просроченные: ${expired.length}</p>
+        
+        let html = '';
+        user.forEach(a => {
+            html += `<div class="appointment-item">
+                <div><strong>${a.name} ${a.surname || ''}</strong> | ${a.service}<br>📅 ${a.date} в ${a.time}, мастер: ${a.barber}</div>
+                <div class="button-group">
+                    <button class="reschedule-btn" data-id="${a.id}">Перенести</button>
+                    <button class="cancel-btn" data-id="${a.id}">Отменить</button>
+                </div>
+            </div>`;
+        });
+        cont.innerHTML = html;
+        
+        document.querySelectorAll('.cancel-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm('Отменить запись?')) await deleteApp(btn.dataset.id);
+            });
+        });
+        
+        document.querySelectorAll('.reschedule-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentRescheduleId = btn.dataset.id;
+                document.getElementById('newDate').value = getTomorrow();
+                document.getElementById('rescheduleModal').style.display = 'flex';
+            });
+        });
+    }
+
+    // АДМИН-ПАНЕЛЬ
+    function renderAdmin() {
+        let cont = document.getElementById('adminPanelContent');
+        if (!cont) return;
+        
+        if (!isAdmin) {
+            cont.innerHTML = `<div><h3>Вход в админ-панель</h3><input type="password" id="adminPass"><button id="doLogin" class="btn">Войти</button></div>`;
+            document.getElementById('doLogin')?.addEventListener('click', () => {
+                if (document.getElementById('adminPass').value === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    renderAdmin();
+                } else {
+                    alert('Неверный пароль');
+                }
+            });
+            return;
+        }
+        
+        let expired = appointments.filter(isExpired);
+        let html = `<h3>Все записи (${appointments.length})</h3>
+            <p>✅ Активные: ${appointments.length - expired.length} | ⏰ Просроченные: ${expired.length}</p>
             <button id="cleanExpired" class="btn" style="background:#c9a03d;">Удалить просроченные</button>
             <button id="refresh" class="btn" style="background:#3a6ea5;margin-left:10px;">Обновить</button>
-            <button id="export" class="btn" style="background:#2c5a2c;margin-left:10px;">Экспорт</button>`;
-        appointments.forEach(a=>{
-            html+=`<div class="appointment-admin-item" ${isExpired(a)?'style="opacity:0.7;border-left-color:#ff6b6b;"':''}>
-                <strong>${a.name} ${a.surname||''}</strong> (${a.phone})${isExpired(a)?' ⏰ ПРОСРОЧЕНА':''}<br>
-                Группа: ${a.group||'—'}<br>Услуга: ${a.service}<br>Мастер: ${a.barber}<br>
-                Дата: ${a.date} в ${a.time}<br>Коммент: ${a.comment||'—'}<br>
+            <button id="export" class="btn" style="background:#2c5a2c;margin-left:10px;">Экспорт JSON</button>`;
+        
+        appointments.forEach(a => {
+            html += `<div class="appointment-admin-item" ${isExpired(a) ? 'style="opacity:0.7;border-left-color:#ff6b6b;"' : ''}>
+                <strong>${a.name} ${a.surname || ''}</strong> (${a.phone})${isExpired(a) ? ' ⏰ ПРОСРОЧЕНА' : ''}<br>
+                Группа: ${a.group || '—'}<br>Услуга: ${a.service}<br>Мастер: ${a.barber}<br>
+                Дата: ${a.date} в ${a.time}<br>Коммент: ${a.comment || '—'}<br>
                 <button class="reschedule-admin" data-id="${a.id}">Перенести</button>
                 <button class="delete-admin" data-id="${a.id}">Удалить</button>
             </div>`;
         });
-        cont.innerHTML=html;
-        document.getElementById('cleanExpired')?.addEventListener('click',async()=>{let ex=appointments.filter(isExpired);if(ex.length==0){toast('Нет просроченных','error');return;}if(confirm(`Удалить ${ex.length} записей?`)){for(let a of ex)await deleteApp(a.id);toast(`Удалено ${ex.length}`);renderAdmin();}});
-        document.getElementById('refresh')?.addEventListener('click',async()=>{await load();toast('Обновлено');});
-        document.getElementById('export')?.addEventListener('click',()=>{let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(appointments,null,2)],{type:'application/json'}));a.download=`barber_${new Date().toISOString().slice(0,19)}.json`;a.click();});
-        document.querySelectorAll('.delete-admin').forEach(btn=>btn.addEventListener('click',async()=>{if(confirm('Удалить?')){await deleteApp(btn.dataset.id);renderAdmin();}}));
-        document.querySelectorAll('.reschedule-admin').forEach(btn=>btn.addEventListener('click',()=>{currentRescheduleId=btn.dataset.id;document.getElementById('newDate').value=getTomorrow();document.getElementById('rescheduleModal').style.display='flex';}));
+        cont.innerHTML = html;
+        
+        document.getElementById('cleanExpired')?.addEventListener('click', async () => {
+            let ex = appointments.filter(isExpired);
+            if (ex.length == 0) { toast('Нет просроченных записей', 'error'); return; }
+            if (confirm(`Удалить ${ex.length} просроченных записей?`)) {
+                for (let a of ex) await deleteApp(a.id);
+                toast(`Удалено ${ex.length} записей`);
+                renderAdmin();
+            }
+        });
+        
+        document.getElementById('refresh')?.addEventListener('click', async () => {
+            await load();
+            toast('Данные обновлены');
+        });
+        
+        document.getElementById('export')?.addEventListener('click', () => {
+            let a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(appointments, null, 2)], { type: 'application/json' }));
+            a.download = `barber_${new Date().toISOString().slice(0, 19)}.json`;
+            a.click();
+        });
+        
+        document.querySelectorAll('.delete-admin').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm('Удалить запись?')) {
+                    await deleteApp(btn.dataset.id);
+                    renderAdmin();
+                }
+            });
+        });
+        
+        document.querySelectorAll('.reschedule-admin').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentRescheduleId = btn.dataset.id;
+                document.getElementById('newDate').value = getTomorrow();
+                document.getElementById('rescheduleModal').style.display = 'flex';
+            });
+        });
     }
 
-    document.getElementById('adminPanelBtn').addEventListener('click',(e)=>{e.preventDefault();renderAdmin();document.getElementById('adminModal').style.display='flex';});
-    document.querySelectorAll('.close-modal').forEach(btn=>btn.addEventListener('click',()=>{document.getElementById('adminModal').style.display='none';document.getElementById('rescheduleModal').style.display='none';}));
-    document.getElementById('cancelRescheduleModalBtn')?.addEventListener('click',()=>{document.getElementById('rescheduleModal').style.display='none';});
-    document.getElementById('closeRescheduleModal')?.addEventListener('click',()=>{document.getElementById('rescheduleModal').style.display='none';});
-    document.getElementById('confirmRescheduleBtn')?.addEventListener('click',async()=>{
-        let nd=document.getElementById('newDate').value,nt=document.getElementById('newTime').value;
-        if(!nd||!nt){toast('Выберите дату и время','error');return;}
-        if(!currentRescheduleId){toast('Ошибка','error');document.getElementById('rescheduleModal').style.display='none';return;}
-        toast('Перенос...','error');
-        if(await updateApp(currentRescheduleId,nd,nt)){document.getElementById('rescheduleModal').style.display='none';currentRescheduleId=null;if(isAdmin)renderAdmin();}
-    });
-    window.onclick=(e)=>{if(e.target==document.getElementById('adminModal'))document.getElementById('adminModal').style.display='none';if(e.target==document.getElementById('rescheduleModal'))document.getElementById('rescheduleModal').style.display='none';};
-
-    document.getElementById('appointmentForm')?.addEventListener('submit',async(e)=>{
+    // МОДАЛЬНЫЕ ОКНА
+    document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
         e.preventDefault();
-        let name=document.getElementById('clientName').value.trim(),surname=document.getElementById('clientSurname').value.trim(),group=document.getElementById('clientGroup').value.trim(),phone=document.getElementById('clientPhone').value.trim();
-        let service=document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
-        let barber=document.getElementById('barberSelect').value,date=document.getElementById('appointmentDate').value,time=document.getElementById('appointmentTime').value,comment=document.getElementById('comment').value;
-        if(!name||!phone||!date){toast('Заполните имя, телефон и дату','error');return;}
-        if(new Date(date)<new Date().setHours(0,0,0,0)){toast('Выберите будущую дату','error');return;}
-        for(let a of appointments){if(a.barber==barber&&a.date==date&&a.time==time){toast(`Время занято`,'error');return;}}
-        localStorage.setItem('userPhone',phone);
-        toast('Отправка...','error');
-        if(await addApp({name,surname,group,phone,service,barber,date,time,comment})){document.getElementById('clientName').value='';document.getElementById('clientSurname').value='';document.getElementById('clientGroup').value='';document.getElementById('clientPhone').value='';document.getElementById('comment').value='';toast(`✔ Записаны на ${date} в ${time}!`);document.querySelector('.my-appointments').scrollIntoView({behavior:'smooth'});}
-        else toast('Ошибка сервера','error');
+        renderAdmin();
+        document.getElementById('adminModal').style.display = 'flex';
+    });
+    
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('adminModal').style.display = 'none';
+            document.getElementById('rescheduleModal').style.display = 'none';
+        });
+    });
+    
+    document.getElementById('cancelRescheduleModalBtn')?.addEventListener('click', () => {
+        document.getElementById('rescheduleModal').style.display = 'none';
+    });
+    
+    document.getElementById('closeRescheduleModal')?.addEventListener('click', () => {
+        document.getElementById('rescheduleModal').style.display = 'none';
+    });
+    
+    document.getElementById('confirmRescheduleBtn')?.addEventListener('click', async () => {
+        let nd = document.getElementById('newDate').value;
+        let nt = document.getElementById('newTime').value;
+        
+        if (!nd || !nt) {
+            toast('Выберите новую дату и время', 'error');
+            return;
+        }
+        
+        if (!currentRescheduleId) {
+            toast('Ошибка: запись не найдена', 'error');
+            document.getElementById('rescheduleModal').style.display = 'none';
+            return;
+        }
+        
+        // Проверка, что дата не в прошлом
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(nd) < today) {
+            toast('❌ Нельзя перенести на прошедшую дату', 'error');
+            return;
+        }
+        
+        toast('Перенос записи...', 'error');
+        let success = await updateApp(currentRescheduleId, nd, nt);
+        if (success) {
+            document.getElementById('rescheduleModal').style.display = 'none';
+            currentRescheduleId = null;
+            if (isAdmin) renderAdmin();
+        }
+    });
+    
+    window.onclick = (e) => {
+        if (e.target == document.getElementById('adminModal')) document.getElementById('adminModal').style.display = 'none';
+        if (e.target == document.getElementById('rescheduleModal')) document.getElementById('rescheduleModal').style.display = 'none';
+    };
+
+    // ФОРМА ЗАПИСИ
+    document.getElementById('appointmentForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        let name = document.getElementById('clientName').value.trim();
+        let surname = document.getElementById('clientSurname').value.trim();
+        let group = document.getElementById('clientGroup').value.trim();
+        let phone = document.getElementById('clientPhone').value.trim();
+        let service = document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
+        let barber = document.getElementById('barberSelect').value;
+        let date = document.getElementById('appointmentDate').value;
+        let time = document.getElementById('appointmentTime').value;
+        let comment = document.getElementById('comment').value;
+        
+        if (!name || !phone || !date) {
+            toast('Заполните имя, телефон и дату', 'error');
+            return;
+        }
+        
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(date) < today) {
+            toast('Выберите сегодняшнюю или будущую дату', 'error');
+            return;
+        }
+        
+        for (let a of appointments) {
+            if (a.barber == barber && a.date == date && a.time == time) {
+                toast(`❌ Время ${date} ${time} уже занято`, 'error');
+                return;
+            }
+        }
+        
+        localStorage.setItem('userPhone', phone);
+        toast('Отправка записи...', 'error');
+        
+        let success = await addApp({ name, surname, group, phone, service, barber, date, time, comment });
+        if (success) {
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientSurname').value = '';
+            document.getElementById('clientGroup').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('comment').value = '';
+            toast(`✔ Вы записаны на ${date} в ${time}!`);
+            document.querySelector('.my-appointments').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            toast('❌ Ошибка сервера. Попробуйте позже.', 'error');
+        }
     });
 
-    let di=document.getElementById('appointmentDate');if(di){di.setAttribute('min',new Date().toISOString().split('T')[0]);di.value=getTomorrow();}
-    document.getElementById('mobileMenuBtn')?.addEventListener('click',()=>{document.getElementById('navLinks').classList.toggle('active');});
+    // УСТАНОВКА ДАТЫ
+    let di = document.getElementById('appointmentDate');
+    if (di) {
+        di.setAttribute('min', new Date().toISOString().split('T')[0]);
+        di.value = getTomorrow();
+    }
+    
+    // МОБИЛЬНОЕ МЕНЮ
+    document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
+        document.getElementById('navLinks').classList.toggle('active');
+    });
+    
+    // ЗАПУСК
     load();
 </script>
 </body>
