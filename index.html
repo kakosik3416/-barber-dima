@@ -452,15 +452,8 @@
         }
     }
 
-    // Обновление записи (перенос)
-    async function updateAppointmentOnServer(id, newDate, newTime) {
-        const oldAppointment = appointments.find(function(app) {
-            return app.id == id;
-        });
-        if (!oldAppointment) {
-            return false;
-        }
-        
+    // ПЕРЕНОС ЗАПИСИ (через удаление + создание новой)
+    async function rescheduleAppointment(oldAppointment, newDate, newTime) {
         // Проверка: дата не может быть в прошлом
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -473,7 +466,7 @@
         // Проверка: свободно ли новое время
         for (let i = 0; i < appointments.length; i++) {
             const app = appointments[i];
-            if (app.id == id) {
+            if (app.id == oldAppointment.id) {
                 continue;
             }
             if (app.barber === oldAppointment.barber && app.date === newDate && app.time === newTime) {
@@ -482,7 +475,8 @@
             }
         }
         
-        const updatedAppointment = {
+        // Создаём новую запись с обновлёнными данными
+        const newAppointment = {
             name: oldAppointment.name,
             surname: oldAppointment.surname,
             group: oldAppointment.group,
@@ -497,21 +491,31 @@
         };
         
         try {
-            const response = await fetch(API_URL + '/' + id, {
-                method: 'PUT',
+            // 1. Удаляем старую запись
+            const deleteResponse = await fetch(API_URL + '/' + oldAppointment.id, {
+                method: 'DELETE'
+            });
+            if (!deleteResponse.ok) {
+                throw new Error('Ошибка удаления старой записи');
+            }
+            
+            // 2. Создаём новую запись
+            const postResponse = await fetch(API_URL, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(updatedAppointment)
+                body: JSON.stringify(newAppointment)
             });
-            if (!response.ok) {
-                throw new Error('Ошибка обновления');
+            if (!postResponse.ok) {
+                throw new Error('Ошибка создания новой записи');
             }
+            
             await loadAppointmentsFromServer();
             showToast('✅ Запись успешно перенесена на ' + newDate + ' в ' + newTime + '!', 'success');
             return true;
         } catch (error) {
-            console.error('Ошибка обновления:', error);
+            console.error('Ошибка переноса:', error);
             showToast('❌ Ошибка при переносе записи', 'error');
             return false;
         }
@@ -821,8 +825,19 @@
                 return;
             }
             
+            // Находим запись по ID
+            const appointmentToReschedule = appointments.find(function(app) {
+                return app.id == currentRescheduleId;
+            });
+            
+            if (!appointmentToReschedule) {
+                showToast('❌ Запись не найдена', 'error');
+                rescheduleModal.style.display = 'none';
+                return;
+            }
+            
             showToast('Перенос записи...', 'warning');
-            const success = await updateAppointmentOnServer(currentRescheduleId, newDate, newTime);
+            const success = await rescheduleAppointment(appointmentToReschedule, newDate, newTime);
             if (success) {
                 rescheduleModal.style.display = 'none';
                 currentRescheduleId = null;
