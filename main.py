@@ -16,8 +16,12 @@ headers = {
 }
 logging.basicConfig(level=logging.INFO)
 
+# Состояния диалога
 ASK_NAME, ASK_PHONE, ASK_SERVICE, ASK_DATE, ASK_TIME = range(5)
 user_data = {}
+
+# Список доступного времени (как на сайте)
+AVAILABLE_TIMES = ["20:00", "20:30", "21:00", "21:30", "22:00", "23:00", "23:30", "00:00"]
 
 async def notify_admin(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -61,12 +65,20 @@ async def ask_service(update: Update, context):
 async def ask_date(update: Update, context):
     user_id = update.effective_user.id
     user_data[user_id]['date'] = update.message.text
-    await update.message.reply_text("Введите время (ЧЧ:ММ):")
+    # Показываем кнопки с доступным временем
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(time, callback_data=f"time_{time}")] for time in AVAILABLE_TIMES
+    ])
+    await update.message.reply_text("Выберите время:", reply_markup=keyboard)
     return ASK_TIME
 
-async def ask_time(update: Update, context):
-    user_id = update.effective_user.id
-    user_data[user_id]['time'] = update.message.text
+async def time_callback(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    time_selected = query.data.split('_')[1]
+    user_data[user_id]['time'] = time_selected
+    # Сохраняем запись
     record = {
         "name": user_data[user_id]['name'],
         "surname": "",
@@ -81,15 +93,16 @@ async def ask_time(update: Update, context):
     }
     resp = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
     if resp.status_code == 201:
-        await update.message.reply_text("✅ Вы успешно записаны!")
+        await query.edit_message_text("✅ Вы успешно записаны!")
         await notify_admin(
             f"✂️ <b>Новая запись через бота!</b>\n"
             f"Клиент: {record['name']}\nТелефон: {record['phone']}\n"
             f"Услуга: {record['service']}\nДата: {record['date']} {record['time']}"
         )
     else:
-        await update.message.reply_text("❌ Ошибка при записи. Попробуйте позже.")
+        await query.edit_message_text("❌ Ошибка при записи. Попробуйте позже.")
         logging.error(f"Supabase error: {resp.text}")
+    # Очищаем данные пользователя
     user_data.pop(user_id, None)
     return ConversationHandler.END
 
@@ -142,7 +155,7 @@ def main():
             ASK_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_phone)],
             ASK_SERVICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_service)],
             ASK_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_date)],
-            ASK_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_time)],
+            ASK_TIME: [CallbackQueryHandler(time_callback, pattern="^time_")],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
@@ -150,7 +163,6 @@ def main():
     application.add_handler(conv_handler)
     application.add_handler(CommandHandler("my_records", my_records))
     application.add_handler(CallbackQueryHandler(cancel_callback, pattern="^cancel_"))
-    # Ключевой параметр drop_pending_updates помогает избежать конфликта
     application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
