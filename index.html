@@ -191,17 +191,40 @@
 
 <script>
     // ==================== НАСТРОЙКИ SUPABASE ====================
-    // ⚠️ ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ ИЗ ПРОЕКТА SUPABASE ⚠️
-   const SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co";
-   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs";
+    const SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs";
     // ============================================================
-    
+
+    // ==================== НАСТРОЙКИ TELEGRAM УВЕДОМЛЕНИЙ ====================
+    const TELEGRAM_BOT_TOKEN = "8693807260:AAGDZ3121GHyRtnrwJALSHnBrotBrQQTAFc";
+    const ADMIN_CHAT_ID = "689626594";  // ваш личный ID
+    // =======================================================================
+
     let appointments = [];
     let isAdmin = false;
     let currentRescheduleId = null;
     const ADMIN_PASSWORD = "admin123";
 
-    // Вспомогательные функции
+    // Функция отправки уведомления в Telegram
+    async function sendTelegramNotification(message) {
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: ADMIN_CHAT_ID,
+                    text: message,
+                    parse_mode: 'HTML'
+                })
+            });
+            if (!response.ok) console.error('Ошибка отправки уведомления:', await response.text());
+            else console.log('Уведомление отправлено в Telegram');
+        } catch (error) {
+            console.error('Ошибка отправки уведомления:', error);
+        }
+    }
+
     function toast(msg, type = 'success') {
         let div = document.createElement('div');
         div.className = `toast ${type}`;
@@ -334,9 +357,13 @@
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
+                let oldApp = appointments.find(a => a.id == id);
                 if (confirm('Отменить запись?')) {
                     if (await deleteAppointment(id)) {
                         toast('✅ Запись отменена');
+                        if (oldApp) {
+                            await sendTelegramNotification(`<b>❌ ЗАПИСЬ ОТМЕНЕНА</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nУслуга: ${oldApp.service}\nДата: ${oldApp.date} в ${oldApp.time}\nТелефон: ${oldApp.phone}`);
+                        }
                     } else {
                         toast('❌ Ошибка отмены', 'error');
                     }
@@ -441,10 +468,14 @@
         document.querySelectorAll('.delete-admin').forEach(btn => {
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
+                let oldApp = appointments.find(a => a.id == id);
                 if (confirm('Удалить запись?')) {
                     if (await deleteAppointment(id)) {
                         toast('✅ Запись удалена');
                         renderAdmin();
+                        if (oldApp) {
+                            await sendTelegramNotification(`<b>❌ ЗАПИСЬ УДАЛЕНА АДМИНИСТРАТОРОМ</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nУслуга: ${oldApp.service}\nДата: ${oldApp.date} в ${oldApp.time}\nТелефон: ${oldApp.phone}`);
+                        }
                     } else {
                         toast('❌ Ошибка удаления', 'error');
                     }
@@ -512,6 +543,7 @@
             document.getElementById('rescheduleModal').style.display = 'none';
             currentRescheduleId = null;
             if (isAdmin) renderAdmin();
+            await sendTelegramNotification(`<b>🔄 ЗАПИСЬ ПЕРЕНЕСЕНА</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nСтарая дата: ${oldApp.date} ${oldApp.time}\nНовая дата: ${nd} ${nt}\nТелефон: ${oldApp.phone}`);
         }
     });
     
@@ -559,6 +591,7 @@
             document.getElementById('comment').value = '';
             toast(`✔ Вы записаны на ${date} в ${time}!`);
             document.querySelector('.my-appointments').scrollIntoView({ behavior: 'smooth' });
+            await sendTelegramNotification(`<b>✂️ НОВАЯ ЗАПИСЬ!</b>\nКлиент: ${name} ${surname}\nУслуга: ${service}\nДата: ${date} в ${time}\nТелефон: ${phone}\nМастер: ${barber}`);
         } else {
             toast('❌ Ошибка сервера. Попробуйте позже.', 'error');
         }
