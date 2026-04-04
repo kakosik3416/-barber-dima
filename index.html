@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Стили остаются прежними, они уже были выше — не меняем */
         *{margin:0;padding:0;box-sizing:border-box;}
         body{background:#0a0a0a;font-family:'Roboto Condensed',sans-serif;color:#e0e0e0;scroll-behavior:smooth;}
         h1,h2,h3,.logo,.nav-links a,.btn{font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;}
@@ -191,17 +190,18 @@
 <footer><p>© 2026 BARBERSTYLE — мужская стрижка с характером</p></footer>
 
 <script>
-    const API_URL = "https://sheetdb.io/api/v1/k3fw460qtitqm";
+    // ==================== НАСТРОЙКИ SUPABASE ====================
+    // ⚠️ ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ ИЗ ПРОЕКТА SUPABASE ⚠️
+   const SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co";
+   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs";
+    // ============================================================
     
     let appointments = [];
     let isAdmin = false;
     let currentRescheduleId = null;
     const ADMIN_PASSWORD = "admin123";
 
-    function generateUniqueId() {
-        return Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
-    }
-
+    // Вспомогательные функции
     function toast(msg, type = 'success') {
         let div = document.createElement('div');
         div.className = `toast ${type}`;
@@ -223,115 +223,86 @@
         return new Date(y, m - 1, d, h, min) < new Date();
     }
 
-    async function load() {
+    // ==== API-функции для работы с Supabase ====
+    async function loadAppointments() {
         try {
-            let r = await fetch(API_URL);
-            if (!r.ok) throw new Error();
-            let data = await r.json();
-            appointments = data.filter(a => a.name && a.name.trim() !== '');
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?select=*`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            appointments = await response.json();
             console.log('Загружено записей:', appointments.length);
             renderUser();
             if (isAdmin) renderAdmin();
-        } catch (e) {
-            document.getElementById('appointmentsList').innerHTML = '<div class="empty-msg">❌ Ошибка подключения</div>';
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('appointmentsList').innerHTML = '<div class="empty-msg">❌ Ошибка подключения к Supabase</div>';
+            toast('Ошибка подключения к базе данных', 'error');
         }
     }
 
-    async function addApp(a) {
+    async function addAppointment(appointment) {
         try {
-            let newApp = { ...a, unique_id: generateUniqueId() };
-            let r = await fetch(API_URL, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newApp)
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(appointment)
             });
-            if (r.ok) {
-                await load();
-                return true;
-            }
-            return false;
-        } catch (e) {
-            console.error('Ошибка добавления:', e);
-            return false;
-        }
-    }
-
-    // Удаление по unique_id (через поиск и удаление по id)
-    async function deleteByUniqueId(uniqueId) {
-        try {
-            // Ищем запись с таким unique_id
-            const searchResponse = await fetch(`${API_URL}?unique_id=${uniqueId}`);
-            if (!searchResponse.ok) {
-                console.error('Ошибка поиска записи');
-                return false;
-            }
-            const found = await searchResponse.json();
-            if (found.length === 0) {
-                console.error('Запись с unique_id не найдена:', uniqueId);
-                return false;
-            }
-            const record = found[0];
-            // Удаляем по id записи (SheetDB автоматически создаёт поле id)
-            const deleteResponse = await fetch(`${API_URL}/${record.id}`, { method: 'DELETE' });
-            if (deleteResponse.ok) {
-                await load();
-                return true;
-            } else {
-                console.error('Ошибка удаления, статус:', deleteResponse.status);
-                return false;
-            }
-        } catch (e) {
-            console.error('Ошибка удаления:', e);
-            return false;
-        }
-    }
-
-    async function rescheduleApp(oldApp, newDate, newTime) {
-        let today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (new Date(newDate) < today) {
-            toast('❌ Нельзя перенести на прошедшую дату', 'error');
-            return false;
-        }
-        
-        for (let a of appointments) {
-            if (a.unique_id === oldApp.unique_id) continue;
-            if (a.barber === oldApp.barber && a.date === newDate && a.time === newTime) {
-                toast(`❌ Время ${newDate} ${newTime} уже занято`, 'error');
-                return false;
-            }
-        }
-        
-        let newApp = {
-            name: oldApp.name,
-            surname: oldApp.surname,
-            group: oldApp.group,
-            phone: oldApp.phone,
-            service: oldApp.service,
-            barber: oldApp.barber,
-            date: newDate,
-            time: newTime,
-            comment: oldApp.comment,
-            created_at: new Date().toISOString(),
-            unique_id: generateUniqueId()
-        };
-        
-        let deleteSuccess = await deleteByUniqueId(oldApp.unique_id);
-        if (!deleteSuccess) {
-            toast('❌ Ошибка при удалении старой записи', 'error');
-            return false;
-        }
-        
-        let addSuccess = await addApp(newApp);
-        if (addSuccess) {
-            toast(`✅ Запись перенесена на ${newDate} в ${newTime}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            await loadAppointments();
             return true;
-        } else {
-            toast('❌ Ошибка при создании новой записи', 'error');
+        } catch (error) {
+            console.error('Ошибка добавления:', error);
             return false;
         }
     }
 
+    async function deleteAppointment(id) {
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            await loadAppointments();
+            return true;
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            return false;
+        }
+    }
+
+    async function updateAppointment(id, updates) {
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?id=eq.${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updates)
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            await loadAppointments();
+            return true;
+        } catch (error) {
+            console.error('Ошибка обновления:', error);
+            return false;
+        }
+    }
+
+    // ==== Отрисовка для пользователя ====
     function renderUser() {
         let cont = document.getElementById('appointmentsList');
         if (!cont) return;
@@ -353,8 +324,8 @@
                     <div class="date-time"><i class="fas fa-calendar-alt"></i> ${a.date} в ${a.time} | <i class="fas fa-cut"></i> мастер: ${a.barber}</div>
                 </div>
                 <div class="button-group">
-                    <button class="reschedule-btn" data-id="${a.unique_id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="cancel-btn" data-id="${a.unique_id}"><i class="fas fa-trash"></i> Отменить</button>
+                    <button class="reschedule-btn" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="cancel-btn" data-id="${a.id}"><i class="fas fa-trash"></i> Отменить</button>
                 </div>
             </div>`;
         });
@@ -364,7 +335,7 @@
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
                 if (confirm('Отменить запись?')) {
-                    if (await deleteByUniqueId(id)) {
+                    if (await deleteAppointment(id)) {
                         toast('✅ Запись отменена');
                     } else {
                         toast('❌ Ошибка отмены', 'error');
@@ -382,6 +353,7 @@
         });
     }
 
+    // ==== Админ-панель ====
     function renderAdmin() {
         let cont = document.getElementById('adminPanelContent');
         if (!cont) return;
@@ -425,14 +397,14 @@
             let isExp = isExpired(a);
             html += `<div class="appointment-admin-item ${isExp ? 'expired' : ''}">
                 <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExp ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
-                <i class="fas fa-users"></i> Группа: ${a.group || '—'}<br>
+                <i class="fas fa-users"></i> Группа: ${a.user_group || '—'}<br>
                 <i class="fas fa-cut"></i> Услуга: ${a.service}<br>
                 <i class="fas fa-user-md"></i> Мастер: ${a.barber}<br>
                 <i class="fas fa-calendar-alt"></i> Дата: ${a.date} в ${a.time}<br>
                 <i class="fas fa-comment"></i> Коммент: ${a.comment || '—'}<br>
                 <div class="admin-item-buttons">
-                    <button class="reschedule-admin" data-id="${a.unique_id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="delete-admin" data-id="${a.unique_id}"><i class="fas fa-trash"></i> Удалить</button>
+                    <button class="reschedule-admin" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="delete-admin" data-id="${a.id}"><i class="fas fa-trash"></i> Удалить</button>
                 </div>
             </div>`;
         });
@@ -451,14 +423,14 @@
             if (confirm(`Удалить ${expiredList.length} просроченных записей?`)) {
                 let deleted = 0;
                 for (let a of expiredList) {
-                    if (await deleteByUniqueId(a.unique_id)) deleted++;
+                    if (await deleteAppointment(a.id)) deleted++;
                 }
                 toast(`Удалено ${deleted} записей`);
                 renderAdmin();
             }
         });
         
-        document.getElementById('refresh')?.addEventListener('click', async () => { await load(); toast('Данные обновлены'); });
+        document.getElementById('refresh')?.addEventListener('click', async () => { await loadAppointments(); toast('Данные обновлены'); });
         document.getElementById('export')?.addEventListener('click', () => {
             let a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(appointments, null, 2)], { type: 'application/json' }));
@@ -470,7 +442,7 @@
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
                 if (confirm('Удалить запись?')) {
-                    if (await deleteByUniqueId(id)) {
+                    if (await deleteAppointment(id)) {
                         toast('✅ Запись удалена');
                         renderAdmin();
                     } else {
@@ -489,6 +461,7 @@
         });
     }
 
+    // ==== Модальные окна ====
     document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
         e.preventDefault();
         renderAdmin();
@@ -517,11 +490,24 @@
         if (!nd || !nt) { toast('Выберите новую дату и время', 'error'); return; }
         if (!currentRescheduleId) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
         
-        let oldApp = appointments.find(a => a.unique_id === currentRescheduleId);
+        let oldApp = appointments.find(a => a.id == currentRescheduleId);
         if (!oldApp) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
         
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(nd) < today) { toast('❌ Нельзя перенести на прошедшую дату', 'error'); return; }
+        
+        // Проверка занятости
+        for (let a of appointments) {
+            if (a.id == currentRescheduleId) continue;
+            if (a.barber === oldApp.barber && a.date === nd && a.time === nt) {
+                toast(`❌ Время ${nd} ${nt} уже занято`, 'error');
+                return;
+            }
+        }
+        
         toast('Перенос записи...', 'error');
-        let success = await rescheduleApp(oldApp, nd, nt);
+        let success = await updateAppointment(currentRescheduleId, { date: nd, time: nt });
         if (success) {
             document.getElementById('rescheduleModal').style.display = 'none';
             currentRescheduleId = null;
@@ -534,12 +520,13 @@
         if (e.target == document.getElementById('rescheduleModal')) document.getElementById('rescheduleModal').style.display = 'none';
     };
 
+    // ==== Форма записи ====
     document.getElementById('appointmentForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         let name = document.getElementById('clientName').value.trim();
         let surname = document.getElementById('clientSurname').value.trim();
-        let group = document.getElementById('clientGroup').value.trim();
+        let user_group = document.getElementById('clientGroup').value.trim();
         let phone = document.getElementById('clientPhone').value.trim();
         let service = document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
         let barber = document.getElementById('barberSelect').value;
@@ -563,7 +550,7 @@
         localStorage.setItem('userPhone', phone);
         toast('Отправка записи...', 'error');
         
-        let success = await addApp({ name, surname, group, phone, service, barber, date, time, comment });
+        let success = await addAppointment({ name, surname, user_group, phone, service, barber, date, time, comment });
         if (success) {
             document.getElementById('clientName').value = '';
             document.getElementById('clientSurname').value = '';
@@ -587,7 +574,8 @@
         document.getElementById('navLinks').classList.toggle('active');
     });
     
-    load();
+    // Запуск
+    loadAppointments();
 </script>
 </body>
 </html>
