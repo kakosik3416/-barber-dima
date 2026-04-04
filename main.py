@@ -4,8 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, filters
 import requests
 
-# --- НАСТРОЙКИ ---
-TELEGRAM_TOKEN = "8693807260:AAGDZ3121GHyRtnrwJALSHnBrotBrQQTAFc"
+TOKEN = "8693807260:AAGDZ3121GHyRtnrwJALSHnBrotBrQQTAFc"
 SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs"
 ADMIN_CHAT_ID = "689626594"
@@ -15,15 +14,13 @@ headers = {
     "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
     "Content-Type": "application/json"
 }
-
 logging.basicConfig(level=logging.INFO)
 
-# Состояния для диалога
 ASK_NAME, ASK_PHONE, ASK_SERVICE, ASK_DATE, ASK_TIME = range(5)
 user_data = {}
 
 async def notify_admin(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
         requests.post(url, json={"chat_id": ADMIN_CHAT_ID, "text": message, "parse_mode": "HTML"})
     except Exception as e:
@@ -70,7 +67,6 @@ async def ask_date(update: Update, context):
 async def ask_time(update: Update, context):
     user_id = update.effective_user.id
     user_data[user_id]['time'] = update.message.text
-    # Сохраняем в Supabase
     record = {
         "name": user_data[user_id]['name'],
         "surname": "",
@@ -138,7 +134,7 @@ async def cancel_callback(update: Update, context):
         await query.edit_message_text("❌ Ошибка при отмене.")
 
 def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    application = Application.builder().token(TOKEN).build()
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("record", record_start)],
         states={
@@ -154,7 +150,8 @@ def main():
     application.add_handler(conv_handler)
     application.add_handler(CommandHandler("my_records", my_records))
     application.add_handler(CallbackQueryHandler(cancel_callback, pattern="^cancel_"))
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Ключевой параметр drop_pending_updates помогает избежать конфликта
+    application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
