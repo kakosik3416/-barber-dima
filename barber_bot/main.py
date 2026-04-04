@@ -1,7 +1,10 @@
-import os
+import asyncio
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, filters
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import requests
 
 # Настройки
@@ -10,180 +13,137 @@ SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs"
 ADMIN_CHAT_ID = "689626594"
 
-# Состояния для диалога
-ASK_NAME, ASK_PHONE, ASK_SERVICE, ASK_DATE, ASK_TIME = range(5)
-
-# Заголовки для Supabase
 headers = {
     "apikey": SUPABASE_ANON_KEY,
     "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
     "Content-Type": "application/json"
 }
 
-# Включим логирование
 logging.basicConfig(level=logging.INFO)
 
-# Хранилище временных данных (в реальности лучше использовать базу, но для старта сойдёт)
-user_data = {}
+bot = Bot(token=TELEGRAM_TOKEN)
+dp = Dispatcher()
 
-# Функция отправки уведомления админу
+# Состояния FSM
+class RecordStates(StatesGroup):
+    name = State()
+    phone = State()
+    service = State()
+    date = State()
+    time = State()
+
 async def notify_admin(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": ADMIN_CHAT_ID, "text": message, "parse_mode": "HTML"}
     try:
-        requests.post(url, json=payload)
+        requests.post(url, json={"chat_id": ADMIN_CHAT_ID, "text": message, "parse_mode": "HTML"})
     except Exception as e:
-        logging.error(f"Не удалось отправить уведомление админу: {e}")
+        logging.error(f"Не удалось отправить уведомление: {e}")
 
-# Команда /start
-async def start(update, context):
-    await update.message.reply_text(
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer(
         "✂️ Добро пожаловать в барбершоп!\n\n"
         "/record – записаться на стрижку\n"
         "/my_records – мои записи"
     )
 
-# Начало диалога записи
-async def record_start(update, context):
-    user_id = update.effective_user.id
-    user_data[user_id] = {}
-    await update.message.reply_text("Как вас зовут? (имя и фамилия)")
-    return ASK_NAME
+@dp.message(Command("record"))
+async def cmd_record(message: types.Message, state: FSMContext):
+    await state.set_state(RecordStates.name)
+    await message.answer("Как вас зовут? (имя и фамилия)")
 
-async def ask_name(update, context):
-    user_id = update.effective_user.id
-    user_data[user_id]['name'] = update.message.text
-    await update.message.reply_text("Ваш номер телефона (для связи):")
-    return ASK_PHONE
+@dp.message(RecordStates.name)
+async def process_name(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await state.set_state(RecordStates.phone)
+    await message.answer("Ваш номер телефона (для связи):")
 
-async def ask_phone(update, context):
-    user_id = update.effective_user.id
-    user_data[user_id]['phone'] = update.message.text
-    await update.message.reply_text("Выберите услугу:\n1 - Мужская стрижка (200₽)\n2 - Комплекс VIP (250₽)")
-    return ASK_SERVICE
+@dp.message(RecordStates.phone)
+async def process_phone(message: types.Message, state: FSMContext):
+    await state.update_data(phone=message.text)
+    await state.set_state(RecordStates.service)
+    await message.answer("Выберите услугу:\n1 - Мужская стрижка (200₽)\n2 - Комплекс VIP (250₽)")
 
-async def ask_service(update, context):
-    user_id = update.effective_user.id
+@dp.message(RecordStates.service)
+async def process_service(message: types.Message, state: FSMContext):
     service_map = {"1": "Мужская стрижка (200 ₽)", "2": "Комплекс VIP (250 ₽)"}
-    user_data[user_id]['service'] = service_map.get(update.message.text, update.message.text)
-    await update.message.reply_text("Введите желаемую дату в формате ГГГГ-ММ-ДД (например, 2026-04-10):")
-    return ASK_DATE
+    service = service_map.get(message.text, message.text)
+    await state.update_data(service=service)
+    await state.set_state(RecordStates.date)
+    await message.answer("Введите желаемую дату в формате ГГГГ-ММ-ДД (например, 2026-04-10):")
 
-async def ask_date(update, context):
-    user_id = update.effective_user.id
-    user_data[user_id]['date'] = update.message.text
-    await update.message.reply_text("Введите время (например, 20:00):")
-    return ASK_TIME
+@dp.message(RecordStates.date)
+async def process_date(message: types.Message, state: FSMContext):
+    await state.update_data(date=message.text)
+    await state.set_state(RecordStates.time)
+    await message.answer("Введите время (например, 20:00):")
 
-async def ask_time(update, context):
-    user_id = update.effective_user.id
-    user_data[user_id]['time'] = update.message.text
-
-    # Сохраняем в Supabase
+@dp.message(RecordStates.time)
+async def process_time(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    user_id = message.from_user.id
     record = {
-        "name": user_data[user_id]['name'],
+        "name": data['name'],
         "surname": "",
         "user_group": "—",
-        "phone": user_data[user_id]['phone'],
-        "service": user_data[user_id]['service'],
+        "phone": data['phone'],
+        "service": data['service'],
         "barber": "Дмитрий The Old school",
-        "date": user_data[user_id]['date'],
-        "time": user_data[user_id]['time'],
+        "date": data['date'],
+        "time": message.text,
         "comment": "Запись через Telegram",
         "user_telegram_id": str(user_id)
     }
-    response = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
-    if response.status_code == 201:
-        await update.message.reply_text("✅ Вы успешно записаны!")
+    resp = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
+    if resp.status_code == 201:
+        await message.answer("✅ Вы успешно записаны!")
         await notify_admin(
             f"✂️ <b>Новая запись через бота!</b>\n"
             f"Клиент: {record['name']}\nТелефон: {record['phone']}\n"
             f"Услуга: {record['service']}\nДата: {record['date']} {record['time']}"
         )
     else:
-        await update.message.reply_text("❌ Ошибка при записи. Попробуйте позже.")
-        logging.error(f"Supabase error: {response.text}")
+        await message.answer("❌ Ошибка при записи. Попробуйте позже.")
+        logging.error(f"Supabase error: {resp.text}")
+    await state.clear()
 
-    # Очищаем данные пользователя
-    user_data.pop(user_id, None)
-    return ConversationHandler.END
-
-# Отмена диалога
-async def cancel(update, context):
-    user_id = update.effective_user.id
-    user_data.pop(user_id, None)
-    await update.message.reply_text("Запись отменена.")
-    return ConversationHandler.END
-
-# Показать мои записи
-async def my_records(update, context):
-    user_id = str(update.effective_user.id)
-    response = requests.get(
-        f"{SUPABASE_URL}/rest/v1/appointments?user_telegram_id=eq.{user_id}",
-        headers=headers
-    )
-    if response.status_code != 200:
-        await update.message.reply_text("Ошибка получения записей.")
+@dp.message(Command("my_records"))
+async def cmd_my_records(message: types.Message):
+    user_id = str(message.from_user.id)
+    resp = requests.get(f"{SUPABASE_URL}/rest/v1/appointments?user_telegram_id=eq.{user_id}", headers=headers)
+    if resp.status_code != 200:
+        await message.answer("Ошибка получения записей.")
         return
-    records = response.json()
+    records = resp.json()
     if not records:
-        await update.message.reply_text("У вас нет активных записей.")
+        await message.answer("У вас нет активных записей.")
         return
     for rec in records:
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("❌ Отменить", callback_data=f"cancel_{rec['id']}")]
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Отменить", callback_data=f"cancel_{rec['id']}")]
         ])
-        await update.message.reply_text(
+        await message.answer(
             f"📅 {rec['date']} {rec['time']}\n✂️ {rec['service']}\n👤 Мастер: {rec.get('barber', 'Дмитрий')}",
             reply_markup=keyboard
         )
 
-# Обработка нажатий на кнопку "Отменить"
-async def cancel_callback(update, context):
-    query = update.callback_query
-    await query.answer()
-    record_id = query.data.split('_')[1]
-    user_id = str(query.from_user.id)
-    # Удаляем запись
-    response = requests.delete(
+@dp.callback_query(lambda c: c.data and c.data.startswith('cancel_'))
+async def cancel_callback(callback: CallbackQuery):
+    record_id = callback.data.split('_')[1]
+    user_id = str(callback.from_user.id)
+    resp = requests.delete(
         f"{SUPABASE_URL}/rest/v1/appointments?id=eq.{record_id}&user_telegram_id=eq.{user_id}",
         headers=headers
     )
-    if response.status_code == 200:
-        await query.edit_message_text("✅ Запись отменена.")
+    if resp.status_code == 200:
+        await callback.message.edit_text("✅ Запись отменена.")
         await notify_admin(f"❌ <b>Отмена записи</b>\nID: {record_id}")
     else:
-        await query.edit_message_text("❌ Ошибка при отмене.")
+        await callback.message.edit_text("❌ Ошибка при отмене.")
+    await callback.answer()
 
-def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-
-    # ConversationHandler для записи
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("record", record_start)],
-        states={
-            ASK_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_name)],
-            ASK_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_phone)],
-            ASK_SERVICE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_service)],
-            ASK_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_date)],
-            ASK_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_time)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(conv_handler)
-    application.add_handler(CommandHandler("my_records", my_records))
-    application.add_handler(CallbackQueryHandler(cancel_callback, pattern="^cancel_"))
-
-    # Запускаем бота (вебхук для Railway, или поллинг для локального теста)
-    PORT = int(os.environ.get("PORT", "8443"))
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TELEGRAM_TOKEN,
-        webhook_url=f"https://ваш-проект.railway.app/{TELEGRAM_TOKEN}"
-    )
+async def main():
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
