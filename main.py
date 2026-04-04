@@ -18,19 +18,15 @@ headers = {
 }
 logging.basicConfig(level=logging.INFO)
 
-# Состояния диалога
 ASK_NAME, ASK_PHONE, ASK_SERVICE, ASK_DATE, ASK_TIME, CONFIRM = range(6)
 user_data = {}
 
-# Доступные услуги (кнопки)
 SERVICES = {
     "1": "✂️ Мужская стрижка (200 ₽)",
     "2": "💎 Комплекс VIP (250 ₽)"
 }
-# Список всех возможных временных слотов
 ALL_TIMES = ["20:00", "20:30", "21:00", "21:30", "22:00", "23:00", "23:30", "00:00"]
 
-# Главное меню (ReplyKeyboard)
 main_menu = ReplyKeyboardMarkup(
     [
         [KeyboardButton("✂️ Записаться"), KeyboardButton("📋 Мои записи")],
@@ -46,7 +42,6 @@ async def notify_admin(message):
     except Exception as e:
         logging.error(f"Не удалось отправить уведомление: {e}")
 
-# Получение занятых слотов на конкретную дату
 def get_booked_times(date):
     resp = requests.get(
         f"{SUPABASE_URL}/rest/v1/appointments?date=eq.{date}&select=time",
@@ -58,14 +53,16 @@ def get_booked_times(date):
 
 async def start(update: Update, context):
     await update.message.reply_text(
-        "✨ <b>Добро пожаловать в наш барбершоп!</b> ✨\n\n"
-        "Я помогу вам записаться на стрижку, посмотреть ваши записи и отменить их.\n\n"
+        "✨ <b>Добро пожаловать в барбершоп «BARBERSTYLE»!</b> ✨\n\n"
+        "✂️ Здесь вы можете записаться на стрижку, посмотреть свои записи или отменить их.\n\n"
+        "🔗 <b>Наш сайт:</b> <a href='https://kakosik3416.github.io/-barber-dima/'>barber-shop</a>\n"
+        "Там тоже можно записаться, отменить или перенести запись.\n\n"
         "Используйте кнопки меню ниже 👇",
         parse_mode="HTML",
-        reply_markup=main_menu
+        reply_markup=main_menu,
+        disable_web_page_preview=True
     )
 
-# Обработка нажатий на главные кнопки
 async def handle_main_menu(update: Update, context):
     text = update.message.text
     if text == "✂️ Записаться":
@@ -75,15 +72,17 @@ async def handle_main_menu(update: Update, context):
     elif text == "❓ Помощь":
         await help_command(update, context)
     else:
-        await update.message.reply_text("Пожалуйста, используйте кнопки меню.")
+        await update.message.reply_text("Пожалуйста, используйте кнопки меню.", reply_markup=main_menu)
 
 async def help_command(update: Update, context):
     await update.message.reply_text(
         "📌 <b>Как пользоваться ботом</b>\n\n"
         "• Нажмите «✂️ Записаться» – бот задаст несколько вопросов.\n"
         "• «📋 Мои записи» – покажет ваши активные записи с возможностью отмены.\n"
-        "• Если возникнут трудности, напишите администратору: @kakosik3416",
-        parse_mode="HTML"
+        "• Если возникнут трудности, напишите администратору: @kakosik3416\n\n"
+        "🔗 <b>Наш сайт:</b> <a href='https://kakosik3416.github.io/-barber-dima/'>barber-shop</a>",
+        parse_mode="HTML",
+        disable_web_page_preview=True
     )
 
 async def record_start(update: Update, context):
@@ -101,7 +100,6 @@ async def ask_name(update: Update, context):
 async def ask_phone(update: Update, context):
     user_id = update.effective_user.id
     user_data[user_id]['phone'] = update.message.text
-    # Показываем кнопки выбора услуги
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton(SERVICES["1"], callback_data="service_1")],
         [InlineKeyboardButton(SERVICES["2"], callback_data="service_2")]
@@ -115,16 +113,14 @@ async def service_callback(update: Update, context):
     user_id = query.from_user.id
     service_code = query.data.split('_')[1]
     user_data[user_id]['service'] = SERVICES[service_code]
-    # Показываем выбор даты на ближайшие 7 дней
     await show_date_buttons(query, user_id)
     return ASK_DATE
 
 async def show_date_buttons(query, user_id):
     today = datetime.now()
     buttons = []
-    for i in range(1, 8):  # следующие 7 дней
+    for i in range(1, 8):
         date = (today + timedelta(days=i)).strftime("%Y-%m-%d")
-        # Преобразуем дату в читаемый вид: "5 апреля (сб)"
         dt = datetime.strptime(date, "%Y-%m-%d")
         weekday = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"][dt.weekday()]
         label = f"{dt.day} {['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][dt.month-1]} ({weekday})"
@@ -138,14 +134,12 @@ async def date_callback(update: Update, context):
     user_id = query.from_user.id
     date = query.data.split('_')[1]
     user_data[user_id]['date'] = date
-    # Получаем занятые слоты на эту дату
     booked = get_booked_times(date)
     free_slots = [t for t in ALL_TIMES if t not in booked]
     if not free_slots:
         await query.edit_message_text("😞 На эту дату нет свободного времени. Выберите другую дату.")
         await show_date_buttons(query, user_id)
         return
-    # Показываем кнопки со свободным временем
     buttons = [[InlineKeyboardButton(t, callback_data=f"time_{t}")] for t in free_slots]
     keyboard = InlineKeyboardMarkup(buttons)
     await query.edit_message_text(f"🕒 <b>Выберите время</b> на {date}:", parse_mode="HTML", reply_markup=keyboard)
@@ -157,7 +151,6 @@ async def time_callback(update: Update, context):
     user_id = query.from_user.id
     time_slot = query.data.split('_')[1]
     user_data[user_id]['time'] = time_slot
-    # Показываем подтверждение
     data = user_data[user_id]
     text = (
         f"📝 <b>Проверьте данные:</b>\n\n"
@@ -198,14 +191,23 @@ async def confirm_callback(update: Update, context):
         }
         resp = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
         if resp.status_code == 201:
+            confirm_text = (
+                "✅ <b>Запись подтверждена!</b>\n\n"
+                f"✂️ <b>Услуга:</b> {data['service']}\n"
+                f"📅 <b>Дата:</b> {data['date']}\n"
+                f"🕒 <b>Время:</b> {data['time']}\n"
+                f"👤 <b>Мастер:</b> Дмитрий\n\n"
+                "📌 Вы получите напоминание за час.\n"
+                "❌ Отменить запись можно через команду /my_records.\n\n"
+                "🔗 <b>Наш сайт:</b> <a href='https://kakosik3416.github.io/-barber-dima/'>barber-shop</a>\n"
+                "Там вы также можете записаться, отменить или перенести запись.\n\n"
+                "Будем рады видеть вас! ✨"
+            )
             await query.edit_message_text(
-                f"✅ <b>Вы успешно записаны!</b>\n\n"
-                f"✂️ {data['service']}\n"
-                f"📅 {data['date']} в {data['time']}\n"
-                f"👤 Мастер: Дмитрий\n\n"
-                f"Если понадобится отменить запись – нажмите «📋 Мои записи».",
+                confirm_text,
                 parse_mode="HTML",
-                reply_markup=main_menu
+                reply_markup=main_menu,
+                disable_web_page_preview=True
             )
             await notify_admin(
                 f"✂️ <b>Новая запись через бота!</b>\n"
@@ -213,7 +215,7 @@ async def confirm_callback(update: Update, context):
                 f"Услуга: {data['service']}\nДата: {data['date']} {data['time']}"
             )
         else:
-            await query.edit_message_text("❌ Ошибка при записи. Попробуйте позже.")
+            await query.edit_message_text("❌ Ошибка при записи. Попробуйте позже.", reply_markup=main_menu)
             logging.error(f"Supabase error: {resp.text}")
     else:
         await query.edit_message_text("❌ Запись отменена.", reply_markup=main_menu)
@@ -234,7 +236,14 @@ async def my_records(update: Update, context):
         return
     records = resp.json()
     if not records:
-        await update.message.reply_text("📭 У вас нет активных записей.", reply_markup=main_menu)
+        await update.message.reply_text(
+            "📭 <b>У вас нет активных записей.</b>\n\n"
+            "Записаться можно через кнопку «✂️ Записаться» или на нашем сайте:\n"
+            "<a href='https://kakosik3416.github.io/-barber-dima/'>barber-shop</a>",
+            parse_mode="HTML",
+            reply_markup=main_menu,
+            disable_web_page_preview=True
+        )
         return
     for rec in records:
         keyboard = InlineKeyboardMarkup([
