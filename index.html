@@ -3,7 +3,7 @@
 <head>
     <link rel="icon" type="image/png" href="https://i.ibb.co/RJMyTwx/MG-9897.jpg">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Barber Shop | Онлайн запись</title>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -190,13 +190,11 @@
 <footer><p>© 2026 BARBERSTYLE — мужская стрижка с характером</p></footer>
 
 <script>
-    // ========== ВСТАВЬТЕ ВАШ URL ОТ GOOGLE APPS SCRIPT ==========
-    const API_URL = "https://script.google.com/macros/s/AKfycbx_gFmJKWIx1UaJh-ILbAjE1VUVNBiiQUa0GEj2zeG5hoTdEpSJvjT74DvIJgjK2kCi/exec";
-    // ============================================================
+    const API_URL = "https://sheetdb.io/api/v1/k3fw460qtitqm";
     
     let appointments = [];
     let isAdmin = false;
-    let currentRescheduleId = null;
+    let currentRescheduleRow = null;
     const ADMIN_PASSWORD = "admin123";
 
     function toast(msg, type = 'success') {
@@ -224,12 +222,14 @@
         try {
             let r = await fetch(API_URL);
             if (!r.ok) throw new Error();
-            appointments = await r.json();
+            let data = await r.json();
+            appointments = data.filter(a => a.name && a.name.trim() !== '');
             console.log('Загружено записей:', appointments.length);
             renderUser();
             if (isAdmin) renderAdmin();
         } catch (e) {
             document.getElementById('appointmentsList').innerHTML = '<div class="empty-msg">❌ Ошибка подключения</div>';
+            console.error('Ошибка загрузки:', e);
         }
     }
 
@@ -240,41 +240,76 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(a)
             });
-            if (r.ok) { await load(); return true; }
+            if (r.ok) {
+                await load();
+                return true;
+            }
+            let errorText = await r.text();
+            console.error('Ошибка добавления:', errorText);
             return false;
-        } catch (e) { return false; }
+        } catch (e) {
+            console.error('Ошибка добавления:', e);
+            return false;
+        }
     }
 
-    async function deleteApp(id) {
+    async function deleteByRow(row) {
         try {
-            let r = await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
-            if (r.ok) { await load(); toast('✅ Запись удалена'); return true; }
+            let r = await fetch(`${API_URL}/${row}`, { method: 'DELETE' });
+            if (r.ok) {
+                await load();
+                return true;
+            }
             return false;
-        } catch (e) { toast('❌ Ошибка удаления', 'error'); return false; }
+        } catch (e) {
+            console.error('Ошибка удаления:', e);
+            return false;
+        }
     }
 
-    async function updateApp(id, newDate, newTime) {
-        let old = appointments.find(a => a.id == id);
-        if (!old) return false;
+    async function rescheduleApp(oldApp, newDate, newTime, rowNumber) {
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (new Date(newDate) < today) {
+            toast('❌ Нельзя перенести на прошедшую дату', 'error');
+            return false;
+        }
         
         for (let a of appointments) {
-            if (a.id == id) continue;
-            if (a.barber == old.barber && a.date == newDate && a.time == newTime) {
+            if (a === oldApp) continue;
+            if (a.barber === oldApp.barber && a.date === newDate && a.time === newTime) {
                 toast(`❌ Время ${newDate} ${newTime} уже занято`, 'error');
                 return false;
             }
         }
         
-        let updated = { ...old, date: newDate, time: newTime };
-        try {
-            let r = await fetch(`${API_URL}?id=${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updated)
-            });
-            if (r.ok) { await load(); toast(`✅ Запись перенесена на ${newDate} в ${newTime}`); return true; }
+        let newApp = {
+            name: oldApp.name,
+            surname: oldApp.surname,
+            group: oldApp.group,
+            phone: oldApp.phone,
+            service: oldApp.service,
+            barber: oldApp.barber,
+            date: newDate,
+            time: newTime,
+            comment: oldApp.comment,
+            created_at: new Date().toISOString()
+        };
+        
+        let deleteSuccess = await deleteByRow(rowNumber);
+        if (!deleteSuccess) {
+            toast('❌ Ошибка при удалении старой записи', 'error');
             return false;
-        } catch (e) { toast('❌ Ошибка переноса', 'error'); return false; }
+        }
+        
+        let addSuccess = await addApp(newApp);
+        if (addSuccess) {
+            toast(`✅ Запись перенесена на ${newDate} в ${newTime}`);
+            return true;
+        } else {
+            toast('❌ Ошибка при создании новой записи', 'error');
+            return false;
+        }
     }
 
     function renderUser() {
@@ -291,15 +326,17 @@
         }
         
         let html = '';
-        user.forEach(a => {
+        user.forEach((a, idx) => {
+            let globalIndex = appointments.findIndex(app => app === a);
+            let rowNumber = globalIndex + 1;
             html += `<div class="appointment-item">
                 <div class="appointment-info">
                     <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> | ${a.service}<br>
                     <div class="date-time"><i class="fas fa-calendar-alt"></i> ${a.date} в ${a.time} | <i class="fas fa-cut"></i> мастер: ${a.barber}</div>
                 </div>
                 <div class="button-group">
-                    <button class="reschedule-btn" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="cancel-btn" data-id="${a.id}"><i class="fas fa-trash"></i> Отменить</button>
+                    <button class="reschedule-btn" data-row="${rowNumber}" data-name="${a.name}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="cancel-btn" data-row="${rowNumber}"><i class="fas fa-trash"></i> Отменить</button>
                 </div>
             </div>`;
         });
@@ -307,16 +344,29 @@
         
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                let id = btn.dataset.id;
-                if (confirm('Отменить запись?')) await deleteApp(id);
+                let row = btn.dataset.row;
+                if (confirm('Отменить запись?')) {
+                    if (await deleteByRow(row)) {
+                        toast('✅ Запись отменена');
+                    } else {
+                        toast('❌ Ошибка отмены', 'error');
+                    }
+                }
             });
         });
         
         document.querySelectorAll('.reschedule-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                currentRescheduleId = btn.dataset.id;
-                document.getElementById('newDate').value = getTomorrow();
-                document.getElementById('rescheduleModal').style.display = 'flex';
+                let row = parseInt(btn.dataset.row);
+                let app = appointments[row - 1];
+                if (app) {
+                    currentRescheduleApp = app;
+                    currentRescheduleRow = row;
+                    document.getElementById('newDate').value = getTomorrow();
+                    document.getElementById('rescheduleModal').style.display = 'flex';
+                } else {
+                    toast('❌ Запись не найдена', 'error');
+                }
             });
         });
     }
@@ -360,17 +410,19 @@
             <button id="export" class="btn" style="background:#2c5a2c;margin-left:10px;"><i class="fas fa-download"></i> Экспорт JSON</button>
         </div>`;
         
-        appointments.forEach(a => {
-            html += `<div class="appointment-admin-item ${isExpired(a) ? 'expired' : ''}">
-                <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExpired(a) ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
+        appointments.forEach((a, idx) => {
+            let rowNumber = idx + 1;
+            let isExp = isExpired(a);
+            html += `<div class="appointment-admin-item ${isExp ? 'expired' : ''}">
+                <strong><i class="fas fa-user"></i> ${a.name} ${a.surname || ''}</strong> (${a.phone})${isExp ? ' <span style="color:#ff6b6b;">⏰ ПРОСРОЧЕНА</span>' : ''}<br>
                 <i class="fas fa-users"></i> Группа: ${a.group || '—'}<br>
                 <i class="fas fa-cut"></i> Услуга: ${a.service}<br>
                 <i class="fas fa-user-md"></i> Мастер: ${a.barber}<br>
                 <i class="fas fa-calendar-alt"></i> Дата: ${a.date} в ${a.time}<br>
                 <i class="fas fa-comment"></i> Коммент: ${a.comment || '—'}<br>
                 <div class="admin-item-buttons">
-                    <button class="reschedule-admin" data-id="${a.id}"><i class="fas fa-calendar-alt"></i> Перенести</button>
-                    <button class="delete-admin" data-id="${a.id}"><i class="fas fa-trash"></i> Удалить</button>
+                    <button class="reschedule-admin" data-row="${rowNumber}"><i class="fas fa-calendar-alt"></i> Перенести</button>
+                    <button class="delete-admin" data-row="${rowNumber}"><i class="fas fa-trash"></i> Удалить</button>
                 </div>
             </div>`;
         });
@@ -384,11 +436,16 @@
         });
         
         document.getElementById('cleanExpired')?.addEventListener('click', async () => {
-            let ex = appointments.filter(isExpired);
-            if (ex.length === 0) { toast('Нет просроченных записей', 'error'); return; }
-            if (confirm(`Удалить ${ex.length} просроченных записей?`)) {
-                for (let a of ex) await deleteApp(a.id);
-                toast(`Удалено ${ex.length} записей`);
+            let expiredList = appointments.filter(isExpired);
+            if (expiredList.length === 0) { toast('Нет просроченных записей', 'error'); return; }
+            if (confirm(`Удалить ${expiredList.length} просроченных записей?`)) {
+                let deleted = 0;
+                for (let i = appointments.length - 1; i >= 0; i--) {
+                    if (isExpired(appointments[i])) {
+                        if (await deleteByRow(i + 1)) deleted++;
+                    }
+                }
+                toast(`Удалено ${deleted} записей`);
                 renderAdmin();
             }
         });
@@ -403,19 +460,35 @@
         
         document.querySelectorAll('.delete-admin').forEach(btn => {
             btn.addEventListener('click', async () => {
-                if (confirm('Удалить запись?')) await deleteApp(btn.dataset.id);
+                let row = btn.dataset.row;
+                if (confirm('Удалить запись?')) {
+                    if (await deleteByRow(row)) {
+                        toast('✅ Запись удалена');
+                        renderAdmin();
+                    } else {
+                        toast('❌ Ошибка удаления', 'error');
+                    }
+                }
             });
         });
         
         document.querySelectorAll('.reschedule-admin').forEach(btn => {
             btn.addEventListener('click', () => {
-                currentRescheduleId = btn.dataset.id;
-                document.getElementById('newDate').value = getTomorrow();
-                document.getElementById('rescheduleModal').style.display = 'flex';
+                let row = parseInt(btn.dataset.row);
+                let app = appointments[row - 1];
+                if (app) {
+                    currentRescheduleApp = app;
+                    currentRescheduleRow = row;
+                    document.getElementById('newDate').value = getTomorrow();
+                    document.getElementById('rescheduleModal').style.display = 'flex';
+                } else {
+                    toast('❌ Запись не найдена', 'error');
+                }
             });
         });
     }
 
+    // Модальные окна
     document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
         e.preventDefault();
         renderAdmin();
@@ -442,17 +515,14 @@
         let nt = document.getElementById('newTime').value;
         
         if (!nd || !nt) { toast('Выберите новую дату и время', 'error'); return; }
-        if (!currentRescheduleId) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
-        
-        let today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (new Date(nd) < today) { toast('❌ Нельзя перенести на прошедшую дату', 'error'); return; }
+        if (!currentRescheduleApp || !currentRescheduleRow) { toast('Ошибка: запись не найдена', 'error'); document.getElementById('rescheduleModal').style.display = 'none'; return; }
         
         toast('Перенос записи...', 'error');
-        let success = await updateApp(currentRescheduleId, nd, nt);
+        let success = await rescheduleApp(currentRescheduleApp, nd, nt, currentRescheduleRow);
         if (success) {
             document.getElementById('rescheduleModal').style.display = 'none';
-            currentRescheduleId = null;
+            currentRescheduleApp = null;
+            currentRescheduleRow = null;
             if (isAdmin) renderAdmin();
         }
     });
@@ -462,6 +532,7 @@
         if (e.target == document.getElementById('rescheduleModal')) document.getElementById('rescheduleModal').style.display = 'none';
     };
 
+    // Форма записи
     document.getElementById('appointmentForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
