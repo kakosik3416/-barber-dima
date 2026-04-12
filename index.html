@@ -183,7 +183,7 @@
     <section id="services"><div class="container"><h2 class="section-title">Наши услуги</h2><div class="services-grid"><div class="service-card"><div class="service-icon"><i class="fas fa-cut"></i></div><h3>Мужская стрижка</h3><p>Классика, андеркат, фейд</p><div class="price">от 200 ₽</div></div><div class="service-card"><div class="service-icon"><i class="fas fa-hot-tub"></i></div><h3>Комплекс VIP</h3><p>Стрижка + уход</p><div class="price">250 ₽</div></div></div></div></section>
     <section id="barbers" style="background:#080808;"><div class="container"><h2 class="section-title">Топ барберы</h2><div class="barbers-grid"><div class="barber-card"><img src="https://i.ibb.co/0pm4C1db/MG-0139.jpg" alt="Barber Dmitry"><h3>Дмитрий "The Old school"</h3><p>Я работаю один, помогите!</p></div></div></div></section>
     <section id="booking" class="booking-section"><div class="container"><h2 class="section-title">Онлайн запись</h2><div class="booking-wrapper"><div class="booking-info"><h3>Запишись на стрижку за 2 минуты</h3><p>Выбери мастера, удобное время и получи отличную стрижку.</p><ul class="info-list"><li><i class="fas fa-clock"></i> Понедельник-Вторник: 20:00 – 22:00, 23:00-00:00</li><li><i class="fas fa-map-marker-alt"></i> г. Санкт-Петербург ВАС 3 этаж левое крыло</li><li><i class="fas fa-phone-alt"></i> +7 (900) 280-98-35</li><li><i class="fas fa-wine-bottle"></i> Напитки в подарок</li></ul></div>
-        <div class="booking-form"><form id="appointmentForm"><div class="form-group"><label>Ваше имя *</label><input type="text" id="clientName" placeholder="Алексей" required></div><div class="form-group"><label>Ваша фамилия *</label><input type="text" id="clientSurname" placeholder="Петров" required></div><div class="form-group"><label>Ваша группа *</label><input type="text" id="clientGroup" placeholder="2501" required></div><div class="form-group"><label>Телефон *</label><input type="tel" id="clientPhone" placeholder="+7 900 123-45-67" required></div><div class="form-group"><label>Услуга</label><select id="serviceSelect"><option value="Мужская стрижка (200 ₽)">Мужская стрижка — 200 ₽</option><option value="Комплекс VIP (250 ₽)">Комплекс VIP — 250 ₽</option></select></div><div class="form-group"><label>Мастер</label><select id="barberSelect"><option value="Дмитрий The Old school">Дмитрий The Old school</option></select></div><div class="form-group"><label>Дата *</label><input type="date" id="appointmentDate" required></div><div class="form-group"><label>Время *</label><select id="appointmentTime" required><option value="20:00">20:00</option><option value="20:30">20:30</option><option value="21:00">21:00</option><option value="21:30">21:30</option><option value="22:00">22:00</option><option value="23:00">23:00</option><option value="23:30">23:30</option><option value="00:00">00:00</option></select></div><div class="form-group"><label>Комментарий</label><textarea rows="2" id="comment" placeholder="Пожелания..."></textarea></div><button type="submit" class="submit-btn"><i class="fas fa-calendar-check"></i> Записаться сейчас</button><div id="formSuccessMsg" class="success-message"></div></form>
+        <div class="booking-form"><form id="appointmentForm"><div class="form-group"><label>Ваше имя *</label><input type="text" id="clientName" placeholder="Алексей" required></div><div class="form-group"><label>Ваша фамилия *</label><input type="text" id="clientSurname" placeholder="Петров" required></div><div class="form-group"><label>Ваша группа *</label><input type="text" id="clientGroup" placeholder="2501" required></div><div class="form-group"><label>Телефон *</label><input type="tel" id="clientPhone" placeholder="+7 900 123-45-67" required></div><div class="form-group"><label>Услуга</label><select id="serviceSelect"><option value="Мужская стрижка (200 ₽)">Мужская стрижка — 200 ₽</option><option value="Комплекс VIP (250 ₽)">Комплекс VIP — 250 ₽</option></select></div><div class="form-group"><label>Мастер</label><select id="barberSelect"><option value="Дмитрий The Old school">Дмитрий The Old school</option></select></div><div class="form-group"><label>Дата *</label><input type="date" id="appointmentDate" required></div><div class="form-group"><label>Время *</label><select id="appointmentTime" required><option value="">Выберите дату сначала</option></select></div><div class="form-group"><label>Комментарий</label><textarea rows="2" id="comment" placeholder="Пожелания..."></textarea></div><button type="submit" class="submit-btn"><i class="fas fa-calendar-check"></i> Записаться сейчас</button><div id="formSuccessMsg" class="success-message"></div></form>
         <div class="my-appointments"><h4><i class="fas fa-list-ul"></i> Мои активные записи</h4><div id="appointmentsList"><div class="empty-msg">Загрузка...</div></div></div></div></div></div></section>
     <section id="contacts" class="contact-section"><div class="container"><h2 class="section-title">Контакты</h2><div class="contact-grid"><div class="contact-item"><i class="fas fa-map-pin"></i><h4>Адрес</h4><p>г. Санкт-Петербург ВАС 3 этаж левое крыло</p></div><div class="contact-item"><i class="fas fa-phone-alt"></i><h4>Телефон</h4><p>+7 (900) 280-98-35</p></div><div class="contact-item"><i class="fab fa-telegram"></i><h4>Telegram</h4><p>@kakosik3416</p></div></div></div></section>
 </main>
@@ -195,36 +195,62 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs";
     // ============================================================
 
-    // ==================== НАСТРОЙКИ TELEGRAM УВЕДОМЛЕНИЙ ====================
-    const TELEGRAM_BOT_TOKEN = "8693807260:AAGDZ3121GHyRtnrwJALSHnBrotBrQQTAFc";
-    const ADMIN_CHAT_ID = "689626594";  // ваш личный ID
-    // =======================================================================
-
     let appointments = [];
     let isAdmin = false;
     let currentRescheduleId = null;
     const ADMIN_PASSWORD = "admin123";
 
-    // Функция отправки уведомления в Telegram
-    async function sendTelegramNotification(message) {
-        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    // Список всех возможных временных слотов
+    const ALL_TIMES = ["20:00", "20:30", "21:00", "21:30", "22:00", "23:00", "23:30", "00:00"];
+
+    // Функция для получения занятых слотов на выбранную дату
+    async function getBookedTimes(date) {
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: ADMIN_CHAT_ID,
-                    text: message,
-                    parse_mode: 'HTML'
-                })
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?date=eq.${date}&select=time`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
             });
-            if (!response.ok) console.error('Ошибка отправки уведомления:', await response.text());
-            else console.log('Уведомление отправлено в Telegram');
+            if (!response.ok) return [];
+            const data = await response.json();
+            return data.map(rec => rec.time);
         } catch (error) {
-            console.error('Ошибка отправки уведомления:', error);
+            console.error('Ошибка получения занятых слотов:', error);
+            return [];
         }
     }
 
+    // Функция обновления выпадающего списка времени
+    async function updateTimeOptions(date) {
+        const timeSelect = document.getElementById('appointmentTime');
+        if (!timeSelect) return;
+        
+        timeSelect.innerHTML = '<option value="">Загрузка...</option>';
+        timeSelect.disabled = true;
+        
+        if (!date) {
+            timeSelect.innerHTML = '<option value="">Выберите дату сначала</option>';
+            timeSelect.disabled = false;
+            return;
+        }
+        
+        const booked = await getBookedTimes(date);
+        const freeSlots = ALL_TIMES.filter(slot => !booked.includes(slot));
+        
+        if (freeSlots.length === 0) {
+            timeSelect.innerHTML = '<option value="">Нет свободного времени</option>';
+        } else {
+            let options = '';
+            freeSlots.forEach(slot => {
+                options += `<option value="${slot}">${slot}</option>`;
+            });
+            timeSelect.innerHTML = options;
+        }
+        timeSelect.disabled = false;
+    }
+
+    // ---------- ОСТАЛЬНЫЕ ФУНКЦИИ (без изменений) ----------
     function toast(msg, type = 'success') {
         let div = document.createElement('div');
         div.className = `toast ${type}`;
@@ -246,7 +272,6 @@
         return new Date(y, m - 1, d, h, min) < new Date();
     }
 
-    // ==== API-функции для работы с Supabase ====
     async function loadAppointments() {
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/appointments?select=*`, {
@@ -325,7 +350,6 @@
         }
     }
 
-    // ==== Отрисовка для пользователя ====
     function renderUser() {
         let cont = document.getElementById('appointmentsList');
         if (!cont) return;
@@ -357,13 +381,9 @@
         document.querySelectorAll('.cancel-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
-                let oldApp = appointments.find(a => a.id == id);
                 if (confirm('Отменить запись?')) {
                     if (await deleteAppointment(id)) {
                         toast('✅ Запись отменена');
-                        if (oldApp) {
-                            await sendTelegramNotification(`<b>❌ ЗАПИСЬ ОТМЕНЕНА</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nУслуга: ${oldApp.service}\nДата: ${oldApp.date} в ${oldApp.time}\nТелефон: ${oldApp.phone}`);
-                        }
                     } else {
                         toast('❌ Ошибка отмены', 'error');
                     }
@@ -380,7 +400,6 @@
         });
     }
 
-    // ==== Админ-панель ====
     function renderAdmin() {
         let cont = document.getElementById('adminPanelContent');
         if (!cont) return;
@@ -468,14 +487,10 @@
         document.querySelectorAll('.delete-admin').forEach(btn => {
             btn.addEventListener('click', async () => {
                 let id = btn.dataset.id;
-                let oldApp = appointments.find(a => a.id == id);
                 if (confirm('Удалить запись?')) {
                     if (await deleteAppointment(id)) {
                         toast('✅ Запись удалена');
                         renderAdmin();
-                        if (oldApp) {
-                            await sendTelegramNotification(`<b>❌ ЗАПИСЬ УДАЛЕНА АДМИНИСТРАТОРОМ</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nУслуга: ${oldApp.service}\nДата: ${oldApp.date} в ${oldApp.time}\nТелефон: ${oldApp.phone}`);
-                        }
                     } else {
                         toast('❌ Ошибка удаления', 'error');
                     }
@@ -492,7 +507,7 @@
         });
     }
 
-    // ==== Модальные окна ====
+    // Модальные окна
     document.getElementById('adminPanelBtn').addEventListener('click', (e) => {
         e.preventDefault();
         renderAdmin();
@@ -528,7 +543,6 @@
         today.setHours(0, 0, 0, 0);
         if (new Date(nd) < today) { toast('❌ Нельзя перенести на прошедшую дату', 'error'); return; }
         
-        // Проверка занятости
         for (let a of appointments) {
             if (a.id == currentRescheduleId) continue;
             if (a.barber === oldApp.barber && a.date === nd && a.time === nt) {
@@ -543,7 +557,6 @@
             document.getElementById('rescheduleModal').style.display = 'none';
             currentRescheduleId = null;
             if (isAdmin) renderAdmin();
-            await sendTelegramNotification(`<b>🔄 ЗАПИСЬ ПЕРЕНЕСЕНА</b>\nКлиент: ${oldApp.name} ${oldApp.surname || ''}\nСтарая дата: ${oldApp.date} ${oldApp.time}\nНовая дата: ${nd} ${nt}\nТелефон: ${oldApp.phone}`);
         }
     });
     
@@ -552,7 +565,21 @@
         if (e.target == document.getElementById('rescheduleModal')) document.getElementById('rescheduleModal').style.display = 'none';
     };
 
-    // ==== Форма записи ====
+    // Форма записи
+    const dateInput = document.getElementById('appointmentDate');
+    const timeSelect = document.getElementById('appointmentTime');
+    
+    if (dateInput) {
+        dateInput.setAttribute('min', getTomorrow());
+        dateInput.value = getTomorrow();
+        // При загрузке страницы подгружаем слоты для даты по умолчанию
+        updateTimeOptions(dateInput.value);
+        // При изменении даты обновляем список времени
+        dateInput.addEventListener('change', function() {
+            updateTimeOptions(this.value);
+        });
+    }
+    
     document.getElementById('appointmentForm')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -562,21 +589,21 @@
         let phone = document.getElementById('clientPhone').value.trim();
         let service = document.getElementById('serviceSelect').options[document.getElementById('serviceSelect').selectedIndex].text;
         let barber = document.getElementById('barberSelect').value;
-        let date = document.getElementById('appointmentDate').value;
-        let time = document.getElementById('appointmentTime').value;
+        let date = dateInput.value;
+        let time = timeSelect.value;
         let comment = document.getElementById('comment').value;
         
-        if (!name || !phone || !date) { toast('Заполните имя, телефон и дату', 'error'); return; }
+        if (!name || !phone || !date || !time) { toast('Заполните все поля!', 'error'); return; }
         
         let today = new Date();
         today.setHours(0, 0, 0, 0);
         if (new Date(date) < today) { toast('Выберите сегодняшнюю или будущую дату', 'error'); return; }
         
-        for (let a of appointments) {
-            if (a.barber == barber && a.date == date && a.time == time) {
-                toast(`❌ Время ${date} ${time} уже занято`, 'error');
-                return;
-            }
+        // Проверка на занятость времени (дополнительная защита)
+        const booked = await getBookedTimes(date);
+        if (booked.includes(time)) {
+            toast(`❌ Время ${date} ${time} уже занято`, 'error');
+            return;
         }
         
         localStorage.setItem('userPhone', phone);
@@ -591,23 +618,15 @@
             document.getElementById('comment').value = '';
             toast(`✔ Вы записаны на ${date} в ${time}!`);
             document.querySelector('.my-appointments').scrollIntoView({ behavior: 'smooth' });
-            await sendTelegramNotification(`<b>✂️ НОВАЯ ЗАПИСЬ!</b>\nКлиент: ${name} ${surname}\nУслуга: ${service}\nДата: ${date} в ${time}\nТелефон: ${phone}\nМастер: ${barber}`);
         } else {
             toast('❌ Ошибка сервера. Попробуйте позже.', 'error');
         }
     });
-
-    let di = document.getElementById('appointmentDate');
-    if (di) {
-        di.setAttribute('min', new Date().toISOString().split('T')[0]);
-        di.value = getTomorrow();
-    }
     
     document.getElementById('mobileMenuBtn')?.addEventListener('click', () => {
         document.getElementById('navLinks').classList.toggle('active');
     });
     
-    // Запуск
     loadAppointments();
 </script>
 </body>
