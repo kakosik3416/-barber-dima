@@ -22,14 +22,12 @@ logging.basicConfig(level=logging.INFO)
 ASK_NAME, ASK_PHONE, ASK_SERVICE, ASK_DATE, ASK_TIME, CONFIRM = range(6)
 user_data = {}
 
-# Доступные услуги
 SERVICES = {
     "1": "✂️ Мужская стрижка (200 ₽)",
     "2": "💎 Комплекс VIP (250 ₽)"
 }
 ALL_TIMES = ["20:00", "20:30", "21:00", "21:30", "22:00", "23:00", "23:30", "00:00"]
 
-# Главное меню
 main_menu = ReplyKeyboardMarkup(
     [
         [KeyboardButton("✂️ Записаться"), KeyboardButton("📋 Мои записи")],
@@ -38,7 +36,6 @@ main_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Функция отправки уведомления админу
 async def notify_admin(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
@@ -46,7 +43,6 @@ async def notify_admin(message):
     except Exception as e:
         logging.error(f"Не удалось отправить уведомление: {e}")
 
-# Получение занятых слотов на дату
 def get_booked_times(date):
     resp = requests.get(
         f"{SUPABASE_URL}/rest/v1/appointments?date=eq.{date}&select=time",
@@ -56,7 +52,6 @@ def get_booked_times(date):
         return []
     return [rec['time'] for rec in resp.json()]
 
-# --- Обработчики ---
 async def start(update: Update, context):
     await update.message.reply_text(
         "✨ <b>Добро пожаловать в наш барбершоп!</b> ✨\n\n"
@@ -181,11 +176,12 @@ async def confirm_callback(update: Update, context):
     query = update.callback_query
     await query.answer()
     user_id = query.from_user.id
+    data = user_data.get(user_id)
+    if not data:
+        await query.edit_message_text("❌ Ошибка: данные не найдены. Начните запись заново /record")
+        return ConversationHandler.END
+
     if query.data == "confirm_yes":
-        data = user_data.get(user_id)
-        if not data:
-            await query.edit_message_text("❌ Ошибка: данные не найдены. Начните запись заново /record")
-            return ConversationHandler.END
         record = {
             "name": data['name'],
             "surname": "",
@@ -200,7 +196,10 @@ async def confirm_callback(update: Update, context):
         }
         resp = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
         if resp.status_code == 201:
-            await query.edit_message_text(
+            # Удаляем сообщение с кнопками (чтобы не путало)
+            await query.message.delete()
+            # Отправляем новое сообщение об успехе
+            await update.effective_chat.send_message(
                 f"✅ <b>Вы успешно записаны!</b>\n\n"
                 f"✂️ {data['service']}\n"
                 f"📅 {data['date']} в {data['time']}\n"
@@ -217,7 +216,8 @@ async def confirm_callback(update: Update, context):
             )
         else:
             error_text = resp.text[:200]
-            await query.edit_message_text(
+            await query.message.delete()
+            await update.effective_chat.send_message(
                 f"❌ <b>Ошибка при записи.</b>\n\n"
                 f"Код ошибки: {resp.status_code}\n"
                 f"<code>{error_text}</code>\n\n"
@@ -228,6 +228,7 @@ async def confirm_callback(update: Update, context):
             logging.error(f"Supabase error: {resp.status_code} {resp.text}")
     else:
         await query.edit_message_text("❌ Запись отменена.", reply_markup=main_menu)
+
     user_data.pop(user_id, None)
     return ConversationHandler.END
 
