@@ -36,6 +36,62 @@ main_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+# ---------- ФУНКЦИИ НАПОМИНАНИЙ ----------
+async def send_reminder(chat_id, name, date, time, service):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    text = (
+        f"📅 <b>Напоминание о записи!</b>\n\n"
+        f"👤 {name}, вы записаны на <b>{date}</b> в <b>{time}</b>\n"
+        f"✂️ Услуга: {service}\n\n"
+        f"Ждём вас в нашем барбершопе! Если нужно отменить или перенести запись – нажмите «📋 Мои записи»."
+    )
+    try:
+        requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"})
+        logging.info(f"Напоминание отправлено пользователю {chat_id}")
+    except Exception as e:
+        logging.error(f"Ошибка отправки напоминания: {e}")
+
+async def check_and_send_reminders():
+    """Проверяет записи на завтра и отправляет напоминания, если они ещё не отправлены."""
+    tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+    # Запрашиваем записи на завтра, у которых reminder_sent = false
+    resp = requests.get(
+        f"{SUPABASE_URL}/rest/v1/appointments?date=eq.{tomorrow}&reminder_sent=eq.false&select=*",
+        headers=headers
+    )
+    if resp.status_code != 200:
+        logging.error(f"Ошибка получения записей для напоминаний: {resp.status_code}")
+        return
+    records = resp.json()
+    for rec in records:
+        user_id = rec.get('user_telegram_id')
+        if user_id:
+            await send_reminder(user_id, rec['name'], rec['date'], rec['time'], rec['service'])
+            # Отмечаем, что напоминание отправлено
+            requests.patch(
+                f"{SUPABASE_URL}/rest/v1/appointments?id=eq.{rec['id']}",
+                headers=headers,
+                json={"reminder_sent": True}
+            )
+            await asyncio.sleep(1)  # небольшая пауза, чтобы не превысить лимиты
+
+async def reminder_loop(application: Application):
+    """Фоновый цикл, который запускает проверку каждый день в 10:00 по Москве."""
+    while True:
+        now = datetime.now()
+        # Вычисляем время следующего запуска (сегодня в 10:00 или завтра)
+        target = now.replace(hour=10, minute=0, second=0, microsecond=0)
+        if now >= target:
+            target += timedelta(days=1)
+        sleep_seconds = (target - now).total_seconds()
+        logging.info(f"Следующая проверка напоминаний через {sleep_seconds/3600:.1f} часов")
+        await asyncio.sleep(sleep_seconds)
+        await check_and_send_reminders()
+
+# ---------- ОСТАЛЬНОЙ КОД БОТА (БЕЗ ИЗМЕНЕНИЙ) ----------
+# (Весь код бота, который мы уже использовали, остаётся тем же)
+# Для краткости я не копирую его сюда, но в итоговом файле он будет.
+
 async def notify_admin(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
@@ -192,13 +248,12 @@ async def confirm_callback(update: Update, context):
             "date": data['date'],
             "time": data['time'],
             "comment": "Запись через Telegram",
-            "user_telegram_id": str(user_id)
+            "user_telegram_id": str(user_id),
+            "reminder_sent": False
         }
         resp = requests.post(f"{SUPABASE_URL}/rest/v1/appointments", headers=headers, json=record)
         if resp.status_code == 201:
-            # Удаляем сообщение с кнопками (чтобы не путало)
             await query.message.delete()
-            # Отправляем новое сообщение об успехе
             await update.effective_chat.send_message(
                 f"✅ <b>Вы успешно записаны!</b>\n\n"
                 f"✂️ {data['service']}\n"
@@ -297,6 +352,11 @@ def main():
     application.add_handler(CommandHandler("my_records", my_records))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_main_menu))
     application.add_handler(CallbackQueryHandler(cancel_callback, pattern="^cancel_"))
+
+    # Запускаем фоновую задачу для напоминаний
+    loop = asyncio.get_event_loop()
+    loop.create_task(reminder_loop(application))
+
     application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
