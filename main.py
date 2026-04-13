@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import random
+import json
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, filters
@@ -9,7 +11,8 @@ import requests
 TOKEN = "8693807260:AAGDZ3121GHyRtnrwJALSHnBrotBrQQTAFc"
 SUPABASE_URL = "https://uqenkackpzlslyjrmwkw.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxZW5rYWNrcHpsc2x5anJtd2t3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzMTMzMTAsImV4cCI6MjA5MDg4OTMxMH0.yji4nZOzVvlc64zaogcMrpdsWwqWpkhHlKb29fx6rWs"
-ADMIN_CHAT_ID = "689626594"
+ADMIN_CHAT_ID = "689626594"  # ваш Telegram ID
+ADMIN_PASSWORD = "admin123"   # пароль для входа в админ-режим
 
 headers = {
     "apikey": SUPABASE_ANON_KEY,
@@ -28,13 +31,22 @@ SERVICES = {
 }
 ALL_TIMES = ["20:00", "20:30", "21:00", "21:30", "22:00", "23:00", "23:30", "00:00"]
 
-main_menu = ReplyKeyboardMarkup(
-    [
-        [KeyboardButton("✂️ Записаться"), KeyboardButton("📋 Мои записи")],
-        [KeyboardButton("🌐 Наш сайт"), KeyboardButton("❓ Помощь")]
-    ],
-    resize_keyboard=True
-)
+# Случайные факты о барбершопе
+BARBER_FACTS = [
+    "💈 Первые парикмахеры появились в Древнем Египте около 5000 лет назад.",
+    "✂️ В средневековой Европе парикмахеры также выполняли операции и удаляли зубы.",
+    "💈 Знаменитая красно-синяя вывеска парикмахерской символизирует кровь и вены (исторически).",
+    "✂️ Мужская стрижка может сделать лицо визуально стройнее и моложе.",
+    "💈 В Японии парикмахеров называют «токуя» и они проходят 3-летнее обучение.",
+    "✂️ Самая дорогая стрижка в мире стоила около 16 000 долларов.",
+    "💈 Регулярная стрижка помогает сохранить здоровье волос и кожи головы.",
+    "✂️ В Древнем Риме парикмахер был важной фигурой – он не только стриг, но и брил, и делал массаж.",
+    "💈 Первые электрические машинки для стрижки появились в 1920-х годах.",
+    "✂️ В среднем мужчина посещает барбера 10–12 раз в год."
+]
+
+# Админ-сессии (храним ID пользователей, которые вошли)
+admin_sessions = set()
 
 # ---------- ФУНКЦИИ НАПОМИНАНИЙ ----------
 async def send_reminder(chat_id, name, date, time, service):
@@ -52,9 +64,7 @@ async def send_reminder(chat_id, name, date, time, service):
         logging.error(f"Ошибка отправки напоминания: {e}")
 
 async def check_and_send_reminders():
-    """Проверяет записи на завтра и отправляет напоминания, если они ещё не отправлены."""
     tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-    # Запрашиваем записи на завтра, у которых reminder_sent = false
     resp = requests.get(
         f"{SUPABASE_URL}/rest/v1/appointments?date=eq.{tomorrow}&reminder_sent=eq.false&select=*",
         headers=headers
@@ -67,19 +77,16 @@ async def check_and_send_reminders():
         user_id = rec.get('user_telegram_id')
         if user_id:
             await send_reminder(user_id, rec['name'], rec['date'], rec['time'], rec['service'])
-            # Отмечаем, что напоминание отправлено
             requests.patch(
                 f"{SUPABASE_URL}/rest/v1/appointments?id=eq.{rec['id']}",
                 headers=headers,
                 json={"reminder_sent": True}
             )
-            await asyncio.sleep(1)  # небольшая пауза, чтобы не превысить лимиты
+            await asyncio.sleep(1)
 
 async def reminder_loop(application: Application):
-    """Фоновый цикл, который запускает проверку каждый день в 10:00 по Москве."""
     while True:
         now = datetime.now()
-        # Вычисляем время следующего запуска (сегодня в 10:00 или завтра)
         target = now.replace(hour=10, minute=0, second=0, microsecond=0)
         if now >= target:
             target += timedelta(days=1)
@@ -88,10 +95,87 @@ async def reminder_loop(application: Application):
         await asyncio.sleep(sleep_seconds)
         await check_and_send_reminders()
 
-# ---------- ОСТАЛЬНОЙ КОД БОТА (БЕЗ ИЗМЕНЕНИЙ) ----------
-# (Весь код бота, который мы уже использовали, остаётся тем же)
-# Для краткости я не копирую его сюда, но в итоговом файле он будет.
+# ---------- АДМИНСКИЕ ФУНКЦИИ ----------
+async def admin_login(update: Update, context):
+    if update.effective_user.id != int(ADMIN_CHAT_ID):
+        await update.message.reply_text("⛔ У вас нет доступа к этой команде.")
+        return
+    await update.message.reply_text("🔐 Введите пароль для входа в админ-режим:")
+    return 1
 
+async def admin_password(update: Update, context):
+    if update.message.text == ADMIN_PASSWORD:
+        admin_sessions.add(update.effective_user.id)
+        await update.message.reply_text(
+            "✅ Доступ предоставлен! Теперь вам доступна кнопка «📋 Все записи» в меню.\n"
+            "Используйте её для просмотра всех записей.",
+            reply_markup=get_main_menu(is_admin=True)
+        )
+    else:
+        await update.message.reply_text("❌ Неверный пароль. Доступ не предоставлен.")
+    return ConversationHandler.END
+
+async def all_records(update: Update, context):
+    user_id = update.effective_user.id
+    if user_id not in admin_sessions:
+        await update.message.reply_text("⛔ У вас нет доступа. Используйте /admin для входа.")
+        return
+    resp = requests.get(f"{SUPABASE_URL}/rest/v1/appointments?order=date.asc,time.asc", headers=headers)
+    if resp.status_code != 200:
+        await update.message.reply_text("❌ Ошибка получения записей.")
+        return
+    records = resp.json()
+    if not records:
+        await update.message.reply_text("📭 Нет записей.")
+        return
+    # Группировка по дате
+    current_date = None
+    message_lines = []
+    for rec in records:
+        if rec['date'] != current_date:
+            current_date = rec['date']
+            message_lines.append(f"\n📅 <b>{current_date}</b>")
+        message_lines.append(f"   🕒 {rec['time']} – {rec['name']} ({rec['service']})")
+    full_message = "🗓 <b>Все записи:</b>\n" + "\n".join(message_lines)
+    # Отправляем частями, если длинное
+    for i in range(0, len(full_message), 4000):
+        await update.message.reply_text(full_message[i:i+4000], parse_mode="HTML")
+    # Кнопка экспорта JSON
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📥 Экспорт в JSON", callback_data="export_json")]
+    ])
+    await update.message.reply_text("Нажмите кнопку, чтобы выгрузить все записи в JSON.", reply_markup=keyboard)
+
+async def export_json_callback(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    if user_id not in admin_sessions:
+        await query.edit_message_text("⛔ Нет доступа.")
+        return
+    resp = requests.get(f"{SUPABASE_URL}/rest/v1/appointments?order=date.asc,time.asc", headers=headers)
+    if resp.status_code != 200:
+        await query.edit_message_text("Ошибка получения данных.")
+        return
+    data = resp.json()
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    await query.message.reply_document(
+        document=('appointments.json', json_str.encode('utf-8')),
+        caption="📊 Все записи в формате JSON"
+    )
+
+# ---------- ОСНОВНОЕ МЕНЮ (динамическое) ----------
+def get_main_menu(is_admin=False):
+    buttons = [
+        [KeyboardButton("✂️ Записаться"), KeyboardButton("📋 Мои записи")],
+        [KeyboardButton("🎲 Случайный факт"), KeyboardButton("🌐 Наш сайт")],
+        [KeyboardButton("❓ Помощь")]
+    ]
+    if is_admin:
+        buttons[1].insert(1, KeyboardButton("📋 Все записи"))
+    return ReplyKeyboardMarkup(buttons, resize_keyboard=True)
+
+# ---------- ОБЩИЕ ФУНКЦИИ ----------
 async def notify_admin(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     try:
@@ -109,20 +193,30 @@ def get_booked_times(date):
     return [rec['time'] for rec in resp.json()]
 
 async def start(update: Update, context):
+    user_id = update.effective_user.id
+    is_admin = user_id in admin_sessions
     await update.message.reply_text(
         "✨ <b>Добро пожаловать в наш барбершоп!</b> ✨\n\n"
         "Я помогу вам записаться на стрижку, посмотреть ваши записи и отменить их.\n\n"
         "Используйте кнопки меню ниже 👇",
         parse_mode="HTML",
-        reply_markup=main_menu
+        reply_markup=get_main_menu(is_admin)
     )
 
 async def handle_main_menu(update: Update, context):
     text = update.message.text
+    user_id = update.effective_user.id
+    is_admin = user_id in admin_sessions
+
     if text == "✂️ Записаться":
         await record_start(update, context)
     elif text == "📋 Мои записи":
         await my_records(update, context)
+    elif text == "📋 Все записи" and is_admin:
+        await all_records(update, context)
+    elif text == "🎲 Случайный факт":
+        fact = random.choice(BARBER_FACTS)
+        await update.message.reply_text(fact)
     elif text == "🌐 Наш сайт":
         await update.message.reply_text(
             "🌐 <b>Наш сайт:</b>\nhttps://kakosik3416.github.io/-barber-dima/\n\n"
@@ -138,13 +232,16 @@ async def handle_main_menu(update: Update, context):
 async def help_command(update: Update, context):
     await update.message.reply_text(
         "📌 <b>Как пользоваться ботом</b>\n\n"
-        "• Нажмите «✂️ Записаться» – бот задаст несколько вопросов.\n"
-        "• «📋 Мои записи» – покажет ваши активные записи с возможностью отмены.\n"
-        "• «🌐 Наш сайт» – ссылка на сайт.\n\n"
-        "Если возникнут трудности, напишите администратору: @kakosik3416",
+        "• «✂️ Записаться» – запись на стрижку.\n"
+        "• «📋 Мои записи» – ваши активные записи с возможностью отмены.\n"
+        "• «🎲 Случайный факт» – интересный факт о барбершопе.\n"
+        "• «🌐 Наш сайт» – ссылка на сайт.\n"
+        "• «❓ Помощь» – эта справка.\n\n"
+        "Если вы администратор, используйте /admin для входа – появится кнопка «📋 Все записи».",
         parse_mode="HTML"
     )
 
+# ---------- ДИАЛОГ ЗАПИСИ ----------
 async def record_start(update: Update, context):
     user_id = update.effective_user.id
     user_data[user_id] = {}
@@ -262,7 +359,7 @@ async def confirm_callback(update: Update, context):
                 f"🌐 <a href='https://kakosik3416.github.io/-barber-dima/'>Наш сайт</a> – здесь можно посмотреть все записи.\n\n"
                 f"Если понадобится отменить запись – нажмите «📋 Мои записи».",
                 parse_mode="HTML",
-                reply_markup=main_menu
+                reply_markup=get_main_menu(user_id in admin_sessions)
             )
             await notify_admin(
                 f"✂️ <b>Новая запись через бота!</b>\n"
@@ -278,11 +375,11 @@ async def confirm_callback(update: Update, context):
                 f"<code>{error_text}</code>\n\n"
                 f"Пожалуйста, попробуйте позже или свяжитесь с администратором.",
                 parse_mode="HTML",
-                reply_markup=main_menu
+                reply_markup=get_main_menu(user_id in admin_sessions)
             )
             logging.error(f"Supabase error: {resp.status_code} {resp.text}")
     else:
-        await query.edit_message_text("❌ Запись отменена.", reply_markup=main_menu)
+        await query.edit_message_text("❌ Запись отменена.", reply_markup=get_main_menu(user_id in admin_sessions))
 
     user_data.pop(user_id, None)
     return ConversationHandler.END
@@ -290,7 +387,7 @@ async def confirm_callback(update: Update, context):
 async def cancel(update: Update, context):
     user_id = update.effective_user.id
     user_data.pop(user_id, None)
-    await update.message.reply_text("❌ Запись отменена.", reply_markup=main_menu)
+    await update.message.reply_text("❌ Запись отменена.", reply_markup=get_main_menu(user_id in admin_sessions))
     return ConversationHandler.END
 
 async def my_records(update: Update, context):
@@ -301,7 +398,7 @@ async def my_records(update: Update, context):
         return
     records = resp.json()
     if not records:
-        await update.message.reply_text("📭 У вас нет активных записей.\n\n🌐 <a href='https://kakosik3416.github.io/-barber-dima/'>Записаться можно на сайте</a>", parse_mode="HTML", reply_markup=main_menu)
+        await update.message.reply_text("📭 У вас нет активных записей.\n\n🌐 <a href='https://kakosik3416.github.io/-barber-dima/'>Записаться можно на сайте</a>", parse_mode="HTML", reply_markup=get_main_menu(int(user_id) in admin_sessions))
         return
     for rec in records:
         keyboard = InlineKeyboardMarkup([
@@ -325,13 +422,15 @@ async def cancel_callback(update: Update, context):
         headers=headers
     )
     if resp.status_code == 200:
-        await query.edit_message_text("✅ Запись отменена.", reply_markup=main_menu)
+        await query.edit_message_text("✅ Запись отменена.", reply_markup=get_main_menu(int(user_id) in admin_sessions))
         await notify_admin(f"❌ <b>Отмена записи</b>\nID: {record_id}")
     else:
         await query.edit_message_text("❌ Ошибка при отмене.")
 
+# ---------- ЗАПУСК ----------
 def main():
     application = Application.builder().token(TOKEN).build()
+    # Диалог записи
     conv_handler = ConversationHandler(
         entry_points=[
             CommandHandler("record", record_start),
@@ -347,13 +446,22 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
+    # Админ-диалог
+    admin_conv = ConversationHandler(
+        entry_points=[CommandHandler("admin", admin_login)],
+        states={1: [MessageHandler(filters.TEXT & ~filters.COMMAND, admin_password)]},
+        fallbacks=[]
+    )
     application.add_handler(CommandHandler("start", start))
     application.add_handler(conv_handler)
     application.add_handler(CommandHandler("my_records", my_records))
+    application.add_handler(CommandHandler("all_records", all_records))
+    application.add_handler(admin_conv)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_main_menu))
     application.add_handler(CallbackQueryHandler(cancel_callback, pattern="^cancel_"))
+    application.add_handler(CallbackQueryHandler(export_json_callback, pattern="^export_json"))
 
-    # Запускаем фоновую задачу для напоминаний
+    # Запуск напоминаний
     loop = asyncio.get_event_loop()
     loop.create_task(reminder_loop(application))
 
